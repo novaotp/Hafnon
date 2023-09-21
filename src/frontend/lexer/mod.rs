@@ -241,7 +241,7 @@ impl<'a> Lexer<'a> {
             "<=" => TokenType::LessOrEqual,
 
             "!" => TokenType::Not,
-            "&6" => TokenType::And,
+            "&&" => TokenType::And,
             "||" => TokenType::Or,
 
             _ => TokenType::Unknown,
