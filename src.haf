@@ -1,0 +1,8 @@
+while (2 == 2) {
+    string object = "hi";
+    float myNum = -9 + 4;
+}
+
+mutable string aTest = "hello !";
+boolean aBool = false;
+hey = "";
