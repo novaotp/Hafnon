@@ -18,11 +18,7 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     /// Constructs a new `Parser` instance.
     pub fn new(original_src: &'a str, tokens: &'a [Token]) -> Self {
-        Self {
-            original_src,
-            tokens,
-            index: 0,
-        }
+        Parser { original_src, tokens, index: 0 }
     }
 
     /// Retrieves the current token being processed.
@@ -95,6 +91,7 @@ impl<'a> Parser<'a> {
             TokenType::VarModifiers | TokenType::Type => self.parse_declaration(),
             TokenType::Identifier => self.parse_assignment_or_function(),
             TokenType::While => self.parse_while_loop(),
+            TokenType::ForEach => self.parse_foreach_loop(),
             _ => self.parse_expr(),
         }
     }
@@ -223,9 +220,140 @@ impl<'a> Parser<'a> {
         return Node::While { condition, block: statements }
     }
 
+    fn parse_foreach_loop(&mut self) -> Node {
+        self.advance(); // Consume the foreach keyword
+
+        if self.current_token().token_type != TokenType::LeftParen {
+            self.throw_error(
+                "SyntaxError",
+                "'foreach' keyword must be followed by '('",
+                "Make sure to add parenthesis around your foreach iterator.",
+                &self.tokens[self.index]
+            );
+        }
+
+        self.advance(); // Consume the (
+
+        if self.current_token().token_type != TokenType::Type {
+            self.throw_error(
+                "TypeError",
+                "Type expected for the iterated variable.",
+                "Make sure to add a type to your iterated variable.",
+                &self.tokens[self.index]
+            );
+        }
+
+        let typ = self.current_token().value.clone();
+        self.advance();
+
+        let identifier = self.current_token().value.clone();
+        self.advance();
+
+        if self.current_token().token_type != TokenType::In {
+            self.throw_error(
+                "SyntaxError",
+                "Expected an 'in' keyword.",
+                "Make sure to add an 'in' keyword between the iterated and the iterable.",
+                &self.tokens[self.index]
+            );
+        }
+
+        self.advance();
+
+        let collection = self.current_token().value.clone();
+        self.advance();
+
+        if self.current_token().token_type != TokenType::RightParen {
+            self.throw_error(
+                "SyntaxError",
+                "Expected an ')' keyword.",
+                "Make sure to add an ')' after the foreach declaration.",
+                &self.tokens[self.index]
+            );
+        };
+
+        self.advance();
+
+        if self.current_token().token_type != TokenType::LeftBrace {
+            self.throw_error(
+                "SyntaxError",
+                format!("'foreach' condition must be followed by '{{', got {}", self.current_token().value).as_str(),
+                "Make sure to add braces around your foreach block.",
+                &self.tokens[self.index]
+            );
+        }
+
+        self.advance();
+
+        let mut statements: Vec<Box<Node>> = Vec::new();
+        while self.current_token().token_type != TokenType::RightBrace {
+            let statement = Box::new(self.parse());
+            statements.push(statement);
+        }
+
+        if self.current_token().token_type != TokenType::RightBrace {
+            self.throw_error(
+                "SyntaxError",
+                "'foreach' condition must be close with '}'",
+                "Make sure to add braces around your foreach block.",
+                &self.tokens[self.index]
+            );
+        }
+
+        self.advance();
+
+        return Node::ForEach {
+            item_type: Box::from(typ),
+            item_name: Box::from(identifier),
+            collection: Box::from(collection),
+            block: statements
+        }
+    }
+
     // Parse an expression
     fn parse_expr(&mut self) -> Node {
         return self.parse_comparison();
+    }
+
+    fn parse_vector(&mut self) -> Node {
+        if self.current_token().token_type != TokenType::LeftBracket {
+            self.throw_error(
+                "SyntaxError",
+                "Expected '[' in vector declaration.",
+                &format!("Got unexpected token: {}", self.current_token().value),
+                &self.tokens[self.index]
+            );
+        }
+        self.advance();
+
+        let mut items: Vec<Box<Node>> = Vec::new();
+
+        while self.current_token().token_type != TokenType::RightBracket {
+            items.push(Box::new(self.parse_expr()));
+
+            if self.current_token().token_type == TokenType::Comma {
+                self.advance(); // Consume comma
+            } else if self.current_token().token_type != TokenType::RightBracket {
+                self.throw_error(
+                    "SyntaxError",
+                    "Expected ',' or ']' in vector declaration.",
+                    &format!("Got unexpected token: {}", self.current_token().value),
+                    &self.tokens[self.index]
+                );
+            }
+        }
+
+        if self.current_token().token_type != TokenType::RightBracket {
+            self.throw_error(
+                "SyntaxError",
+                "Expected ']' in vector declaration.",
+                &format!("Got unexpected token: {}", self.current_token().value),
+                &self.tokens[self.index]
+            );
+        }
+        self.advance();
+
+        return Node::Vector { items }
     }
 
     /// Parses comparison expressions.
@@ -359,9 +487,37 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_parentheses(&mut self) -> Node {
+        if self.current_token().token_type != TokenType::LeftParen {
+            self.throw_error(
+                "SyntaxError",
+                "Expected '('",
+                &format!("Got unexpected token: {}", self.current_token().value),
+                &self.tokens[self.index]
+            );
+        }
+        self.advance(); // Consume '('
+
+        let node = self.parse_expr(); // Parse the expression inside the parentheses
+
+        if self.current_token().token_type != TokenType::RightParen {
+            self.throw_error(
+                "SyntaxError",
+                "Expected ')'",
+                &format!("Got unexpected token: {}", self.current_token().value),
+                &self.tokens[self.index]
+            );
+        }
+        self.advance(); // Consume ')'
+
+        return node;
+    }
+
     /// Parses primitives.
     fn parse_primitive(&mut self) -> Node {
         match self.current_token().token_type {
+            TokenType::LeftBracket => return self.parse_vector(),
+            TokenType::LeftParen => return self.parse_parentheses(),
             TokenType::Integer => {
                 let value: i64 = self.tokens[self.index].value.parse::<i64>().unwrap();
                 self.advance();

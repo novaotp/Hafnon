@@ -13,11 +13,14 @@ pub enum TokenType {
     // Loops
     While,
     For,
+    ForEach,
+    In,
 
     Integer,
     Float,
     String,
     Boolean,
+
     Unknown,
     Identifier,
     Assign,

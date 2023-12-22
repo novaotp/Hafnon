@@ -23,12 +23,15 @@ pub enum Node {
     LessThan { left: Box<Node>, right: Box<Node> },
     LessOrEqual { left: Box<Node>, right: Box<Node> },
 
+    Vector { items: Vec<Box<Node>>, },
+
     // Unary operators
     UnaryPlus { expr: Box<Node> },
     UnaryMinus { expr: Box<Node> },
 
     // Loops
     While { condition: Vec<Box<Node>>, block: Vec<Box<Node>> },
+    ForEach { item_type: Box<String>, item_name: Box<String>, collection: Box<String>, block: Vec<Box<Node>> },
 
     // Variables
     Declaration { is_mutable: bool, var_type: String, identifier: String, initializer: Box<Node> },
@@ -71,6 +74,27 @@ pub fn pretty_ast(node: &Node, indent: usize, last: bool) -> String {
             let last_index = block.len() - 1;
             for (i, stmt) in block.iter().enumerate() {
                 result.push_str(&pretty_ast(stmt, indent + 1, i == last_index));
+            }
+        },
+        Node::ForEach { item_type, item_name, collection, block } => {
+            result.push_str(&format!("{}ForEach\n", indent_str));
+
+            result.push_str(&format!("{}└─ Variable type: {}\n", indent_str, item_type));
+            result.push_str(&format!("{}└─ Variable Name: {}\n", indent_str, item_name));
+            result.push_str(&format!("{}└─ Collection: {}\n", indent_str, collection));
+
+            // For block
+            result.push_str(&"{}└─ Block\n".replace("{}", &indent_str));
+            let last_index = block.len() - 1;
+            for (i, stmt) in block.iter().enumerate() {
+                result.push_str(&pretty_ast(stmt, indent + 1, i == last_index));
+            }
+        },
+        Node::Vector { items } => {
+            result.push_str(&format!("{}Vector\n", indent_str));
+            let last_index = items.len() - 1;
+            for (i, item) in items.iter().enumerate() {
+                result.push_str(&pretty_ast(item, indent + 1, i == last_index));
             }
         },
         Node::Declaration { is_mutable, var_type, identifier, initializer } => {

@@ -24,7 +24,7 @@ pub struct Lexer<'a> {
     /// A list of variable modifiers in the language.
     var_modifiers: Vec<&'static str>,
     /// A list of built-in types in the language.
-    types: Vec<&'static str>,
+    types: Vec<&'static str>
 }
 
 impl<'a> Lexer<'a> {
@@ -41,13 +41,13 @@ impl<'a> Lexer<'a> {
         Lexer {
             original_src: src,
             chars: src.chars(),
-            position: Position { column: 1, line: 1 },
+            position: Position::new(1,  1),
             tokens: Vec::new(),
-            loops: vec!["while", "for"],
+            loops: vec!["while", "for", "foreach"],
             conditionals: vec!["if", "else if", "else"],
-            keywords: vec!["func"],
+            keywords: vec!["func", "in"],
             var_modifiers: vec!["mutable"],
-            types: vec!["int", "float", "string", "boolean"],
+            types: vec!["int", "float", "string", "boolean", "vector"],
         }
     }
 
@@ -59,9 +59,9 @@ impl<'a> Lexer<'a> {
     fn handle_numeric(&mut self, char: char) {
         let mut buffer = String::new();
         let mut has_decimal = false;
-        let start_position = self.get_current_position();
+        let start_position = self.position.clone();
 
-        self.advance_column();
+        self.position.next_column();
         buffer.push(char);
 
         while let Some(next_char) = self.chars.clone().next() {
@@ -77,11 +77,11 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            self.advance_column();
+            self.position.next_column();
             buffer.push(self.chars.next().unwrap());
         }
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token_type: TokenType = if has_decimal {
             TokenType::Float
@@ -103,12 +103,12 @@ impl<'a> Lexer<'a> {
     /// Assumes that the opening quote will be skipped.
     fn handle_string(&mut self) {
         let mut buffer = String::new();
-        let start_position = self.get_current_position();
+        let start_position = self.position.clone();
 
-        self.advance_column();
+        self.position.next_column();
 
         while let Some(next_char) = self.chars.clone().next() {
-            self.advance_column();
+            self.position.next_column();
 
             if next_char == '"' {
                 self.chars.next(); // Skip the closing quote
@@ -118,7 +118,7 @@ impl<'a> Lexer<'a> {
             buffer.push(self.chars.next().unwrap());
         }
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token = Token::new(
             TokenType::String,
@@ -136,9 +136,9 @@ impl<'a> Lexer<'a> {
     /// * `char` - The starting character assumed to be part of an alphabetic string.
     fn handle_alpha(&mut self, char: char) {
         let mut buffer = String::new();
-        let start_position = self.get_current_position();
+        let start_position = self.position.clone();
 
-        self.advance_column();
+        self.position.next_column();
         buffer.push(char);
 
         while let Some(next_char) = self.chars.clone().next() {
@@ -146,20 +146,29 @@ impl<'a> Lexer<'a> {
                 break;
             }
 
-            self.advance_column();
+            self.position.next_column();
             buffer.push(self.chars.next().unwrap());
         }
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token_type: TokenType = if self.keywords.contains(&buffer.as_str()) {
-            TokenType::Keyword
+            if buffer.as_str() == "in" {
+                TokenType::In
+            } else {
+                TokenType::Keyword
+            }
         } else if self.var_modifiers.contains(&buffer.as_str()) {
             TokenType::VarModifiers
         } else if ["true", "false"].contains(&buffer.as_str()) {
             TokenType::Boolean
         } else if self.types.contains(&buffer.as_str()) {
-            TokenType::Type
+            match &buffer.as_str() {
+                &"vector" => {
+
+                },
+                _ => TokenType::Type
+            }
         } else if self.conditionals.contains(&buffer.as_str()) {
             match buffer.as_str() {
                 "if" => TokenType::If,
@@ -177,6 +186,7 @@ impl<'a> Lexer<'a> {
             match buffer.as_str() {
                 "while" => TokenType::While,
                 "for" => TokenType::For,
+                "foreach" => TokenType::ForEach,
                 _ => panic!("Unknown loop keyword")
             }
         } else {
@@ -199,10 +209,10 @@ impl<'a> Lexer<'a> {
     /// * `char` - The starting character assumed to be part of an operator.
     fn handle_operator(&mut self, char: char) {
         let mut buffer = String::new();
-        let start_position = self.get_current_position();
+        let start_position = self.position.clone();
 
         buffer.push(char);
-        self.advance_column();
+        self.position.next_column();
 
         if let Some(next_char) = self.chars.clone().next() {
             match (char, next_char) {
@@ -213,14 +223,14 @@ impl<'a> Lexer<'a> {
                 | ('&', '&')
                 | ('|', '|')
                 | ('/', '/') => {
-                    self.advance_column();
+                    self.position.next_column();
                     buffer.push(self.chars.next().unwrap());
                 }
                 _ => {}
             }
         }
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token_type = match buffer.as_str() {
             "=" => TokenType::Assign,
@@ -262,8 +272,8 @@ impl<'a> Lexer<'a> {
     ///
     /// * `char` - The character that represents a delimiter.
     fn handle_delimiter(&mut self, char: char) {
-        let start_position = self.get_current_position();
-        self.advance_column();
+        let start_position = self.position.clone();
+        self.position.next_column();
 
         let token_type = match char {
             ';' => TokenType::SemiColon,
@@ -273,7 +283,7 @@ impl<'a> Lexer<'a> {
             _ => TokenType::Unknown,
         };
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token = Token::new(
             token_type,
@@ -285,8 +295,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn handle_braces(&mut self, char: char) {
-        let start_position = self.get_current_position();
-        self.advance_column();
+        let start_position = self.position.clone();
+        self.position.next_column();
 
         let token_type = match char {
             '(' => TokenType::LeftParen,
@@ -298,7 +308,7 @@ impl<'a> Lexer<'a> {
             _ => TokenType::Unknown,
         };
 
-        let end_position = self.get_current_position();
+        let end_position = self.position.clone();
 
         let token = Token::new(
             token_type,
@@ -323,25 +333,24 @@ impl<'a> Lexer<'a> {
                 if c == '\n' {
                     break; // Comment ends with a new line
                 }
-                self.advance_column();
+                self.position.next_column();
                 self.chars.next();
             }
         } else {
             // Multi-line comment
-            self.advance_column(); // To consume the '*'
+            self.position.next_column(); // To consume the '*'
             let mut prev_char = self.chars.next().unwrap(); // Advance to next character
 
             loop {
                 if let Some(char) = self.chars.next() {
-                    self.advance_column();
+                    self.position.next_column();
 
                     // Comment ends with */
                     if prev_char == '*' && char == '/' {
                         break;
                     }
                     if char == '\n' {
-                        self.reset_column();
-                        self.advance_line();
+                        self.position.next_line();
                     }
                     prev_char = char;
                 } else {
@@ -349,7 +358,7 @@ impl<'a> Lexer<'a> {
                     self.throw_error(
                         "Syntax error",
                         "Unclosed multi-line comment",
-                        "Did you forget to close the multi-line comment ?",
+                        "Did you forget to close the multi-line comment ? Use '*/' to do so.",
                         self.position.column,
                         self.position.line,
                     );
@@ -400,30 +409,6 @@ impl<'a> Lexer<'a> {
         panic!();
     }
 
-    /// Gets the current position in the source code.
-    ///
-    /// # Returns
-    ///
-    /// A Position struct representing the current line and column.
-    pub fn get_current_position(&self) -> Position {
-        return Position { column: self.position.column, line: self.position.line };
-    }
-
-    /// Moves to the next column in the current line.
-    pub fn advance_column(&mut self) {
-        self.position.column += 1;
-    }
-
-    /// Resets the column number to 1.
-    pub fn reset_column(&mut self) {
-        self.position.column = 1;
-    }
-
-    /// Moves to the next line and resets the column number.
-    pub fn advance_line(&mut self) {
-        self.position.line += 1;
-    }
-
     /// Initiates the tokenization process.
     ///
     /// # Returns
@@ -438,11 +423,10 @@ impl<'a> Lexer<'a> {
             } else if char.is_alphabetic() {
                 self.handle_alpha(char);
             } else if char.is_whitespace() {
-                self.advance_column();
+                self.position.next_column();
 
                 if char == '\n' {
-                    self.reset_column();
-                    self.advance_line();
+                    self.position.next_line();
                 }
                 continue;
             } else if char == '#' || (char == '/' && self.chars.clone().next().unwrap() == '*') {
@@ -464,9 +448,9 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        let start_position = self.get_current_position();
-        self.advance_column();
-        let end_position = self.get_current_position();
+        let start_position = self.position.clone();
+        self.position.next_column();
+        let end_position = self.position.clone();
 
         let end_token = Token::new(
             TokenType::EOF,

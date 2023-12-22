@@ -1,8 +1,11 @@
-while (2 == 2) {
-    string object = "hi";
-    float myNum = -9 + 4;
-}
+mutable bool isValid = false;
+mutable int counter = 0;
+vector<string> myStrings = ["item1", "item2", 1, -(1 * (3 - 4))];
 
-mutable string aTest = "hello !";
-boolean aBool = false;
-hey = "";
+foreach (string myString in myStrings) {
+    isValid = true;
+
+    while (true) {
+        counter = 1;
+    }
+}
