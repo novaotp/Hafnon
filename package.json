@@ -1,0 +1,18 @@
+{
+  "name": "hafnon",
+  "version": "0.1.0",
+  "description": "",
+  "main": "node build/main.js",
+  "scripts": {
+    "prebuild": "rd /s /q build",
+    "build": "tsc",
+    "start": "node build/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3"
+  }
+}

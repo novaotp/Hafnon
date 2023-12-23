@@ -1,11 +1,2 @@
-mutable bool isValid = false;
-mutable int counter = 0;
-vector<string> myStrings = ["item1", "item2", 1, -(1 * (3 - 4))];
-
-foreach (string myString in myStrings) {
-    isValid = true;
-
-    while (true) {
-        counter = 1;
-    }
-}
+mutable string myVar = 1;
+t
