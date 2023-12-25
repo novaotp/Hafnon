@@ -1,5 +1,5 @@
-import { Position } from "./Position";
-import { TokenType } from "./TokenType";
+import { Position } from "./lexer/Position";
+import { TokenType } from "./tokenType";
 
 export interface Token {
     /** The value of the token. */

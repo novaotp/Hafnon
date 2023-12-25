@@ -1,8 +1,8 @@
 
 import { Position } from "./Position";
-import { Token } from "./Token";
-import { TokenType } from "./TokenType";
-import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS } from "./constants";
+import { Token } from "../token";
+import { TokenType } from "../tokenType";
+import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES } from "../constants";
 
 export class Lexer {
     /** The raw source code. */
@@ -16,6 +16,11 @@ export class Lexer {
     /** The generated array of tokens. */
     private tokens: Token[];
 
+    /**
+     * Creates an instance of Lexer to process a given source code and output an array of tokens.
+     * @param sourceCode The raw source code to process
+     * @returns An instance of Lexer
+     */
     constructor(sourceCode: string) {
         this.sourceCode = sourceCode;
         this.chars = this.sourceCode.split("");
@@ -69,6 +74,14 @@ export class Lexer {
         return ["=", "==", "!=", ">", ">=", "<", ">="].includes(this.currentChar());
     }
 
+    private isString(): boolean {
+        return this.currentChar() === '"';
+    }
+
+    /**
+     * Lexes the given source code and returns an array of tokens.
+     * @returns An array of tokens generated from the given source code.
+     */
     public tokenize(): Token[] {
         while (this.cursor < this.chars.length) {
             switch (true) {
@@ -137,21 +150,42 @@ export class Lexer {
                 }
 
                 case this.isAlpha(): {
-                    let alpha = this.advance();
+                    let alpha = "";
                     const position = this.currentPosition.clone();
-                    this.currentPosition.nextColumn();
 
                     while ((this.cursor < this.chars.length) && /[a-zA-Z0-9]/.test(this.currentChar())) {
                         alpha += this.advance();
                         this.currentPosition.nextColumn();
                     }
 
-                    const tokenType = KEYWORDS.has(alpha) ? KEYWORDS.get(alpha) : TokenType.Identifier;
+                    const tokenType = KEYWORDS.has(alpha) ? KEYWORDS.get(alpha) : TYPES.has(alpha) ? TYPES.get(alpha) : TokenType.Identifier;
 
                     const token = this.createToken(alpha, tokenType, alpha.length, position);
                     this.tokens.push(token);
                     break;
                 }
+
+                case this.isString():
+                    const position = this.currentPosition.clone();
+
+                    // Skip the first "
+                    this.advance();
+                    this.currentPosition.nextColumn();
+
+                    let string = "";
+
+                    while ((this.cursor < this.chars.length) && this.currentChar() !== '"') {
+                        string += this.advance();
+                        this.currentPosition.nextColumn();
+                    }
+
+                    // Skip the last "
+                    this.advance();
+                    this.currentPosition.nextColumn();
+
+                    const token = this.createToken(string, TokenType.String, string.length, position);
+                    this.tokens.push(token);
+                    break;
 
                 case this.isSkippable(): {
                     switch (this.currentChar()) {

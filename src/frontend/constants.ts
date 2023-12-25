@@ -1,9 +1,13 @@
-import { TokenType } from "./TokenType";
+import { TokenType } from "./tokenType";
 
 export const KEYWORDS = new Map<string, TokenType>([
     ["mutable", TokenType.Mutable],
     ["fn", TokenType.Function]
 ]);
+
+export const TYPES = ["string", "int", "float", "bool", "vector"] as const;
+
+export type Type = typeof TYPES[number];
 
 export const BRACKETS = new Map<string, TokenType>([
     ["(", TokenType.OpenParen],

@@ -6,7 +6,8 @@
   "scripts": {
     "prebuild": "rd /s /q build",
     "build": "tsc",
-    "start": "node build/main.js"
+    "start": "node build/main.js",
+    "pipe": "npm run build && npm start"
   },
   "keywords": [],
   "author": "",

@@ -4,6 +4,9 @@ export enum TokenType {
     Integer,
     Float,
     String,
+    Boolean,
+    Vector,
+
     Identifier,
 
     // Binary Operators
@@ -51,6 +54,8 @@ export const tokenToString = (token: TokenType): string => {
         case TokenType.Integer: return "Integer";
         case TokenType.Float: return "Float";
         case TokenType.String: return "String";
+        case TokenType.Boolean: return "Boolean";
+        case TokenType.Vector: return "Vector";
         case TokenType.Identifier: return "Identifier";
         case TokenType.Addition: return "Addition";
         case TokenType.Subtraction: return "Subtraction";
@@ -79,5 +84,6 @@ export const tokenToString = (token: TokenType): string => {
         case TokenType.Mutable: return "Mutable";
         case TokenType.Function: return "Function";
         case TokenType.EOF: return "EOF";
+        default: "Unimplemented";
     }
 }
