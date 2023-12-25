@@ -1,9 +1,8 @@
 {
     "compilerOptions": {
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
         "moduleResolution": "NodeNext",
-        "lib": ["ES2022"],
+        "lib": ["ES2023"],
         "module": "NodeNext",
         "target": "ES6",
         "rootDir": "src",

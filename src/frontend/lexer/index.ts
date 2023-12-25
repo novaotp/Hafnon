@@ -1,8 +1,8 @@
 
-import { Position } from "./Position";
-import { Token } from "../token";
-import { TokenType } from "../tokenType";
-import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type } from "../constants";
+import { Position } from "./Position.js";
+import { Token } from "../token.js";
+import { TokenType } from "../tokenType.js";
+import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type } from "../constants.js";
 
 export class Lexer {
     /** The raw source code. */

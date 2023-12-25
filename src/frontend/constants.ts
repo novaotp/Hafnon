@@ -1,4 +1,4 @@
-import { TokenType } from "./tokenType";
+import { TokenType } from "./tokenType.js";
 
 export const KEYWORDS = new Map<string, TokenType>([
     ["mutable", TokenType.Mutable],

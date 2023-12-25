@@ -1,4 +1,4 @@
-import { Type } from "../constants";
+import { Type } from "../constants.js";
 
 type NodeType = "Program" | "VariableDeclaration";
 

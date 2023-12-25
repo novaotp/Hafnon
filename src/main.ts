@@ -1,26 +1,15 @@
-import { Lexer } from './frontend/lexer';
-import { Parser } from './frontend/parser';
-import { tokenToString } from './frontend/tokenType';
-import { readSourceFile, writeToFile } from './helper';
+import { Lexer } from './frontend/lexer/index.js';
+import { Parser } from './frontend/parser/index.js';
+import { prettyTokens, readSourceFile, writeToFile } from './helper.js';
 
 const sourceCode = readSourceFile("src.haf");
 
 const lexer = new Lexer(sourceCode);
 const tokens = lexer.tokenize();
 
-writeToFile("tokens.txt", () => {
-    let printedTokens = "[\n";
+writeToFile("tokens.txt", prettyTokens(tokens));
 
-    for (const token of tokens) {
-        printedTokens += `\t{ Value : ${token.value} | Type : ${tokenToString(token.type)} | Length : ${token.length} | Position : ${token.position.toString()} }\n`;
-    }
-
-    printedTokens += "]\n";
-
-    return printedTokens;
-});
-
-const parser = new Parser(tokens);
+const parser = new Parser(tokens, sourceCode);
 const ast = parser.produceAST();
 
-writeToFile("ast.txt", ast);
+writeToFile("ast.txt", JSON.stringify(ast));
