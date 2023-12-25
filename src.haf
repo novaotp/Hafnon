@@ -1,4 +1,0 @@
-mutable string myVar = "hello";
-int myInt = 0;
-bool myBool = false;
-mutable vector myVector;
