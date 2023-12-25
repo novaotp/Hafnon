@@ -6,6 +6,7 @@ export enum TokenType {
     String,
     Boolean,
     Vector,
+    Type,
 
     Identifier,
 

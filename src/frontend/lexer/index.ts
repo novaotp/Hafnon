@@ -2,7 +2,7 @@
 import { Position } from "./Position";
 import { Token } from "../token";
 import { TokenType } from "../tokenType";
-import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES } from "../constants";
+import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type } from "../constants";
 
 export class Lexer {
     /** The raw source code. */
@@ -158,7 +158,7 @@ export class Lexer {
                         this.currentPosition.nextColumn();
                     }
 
-                    const tokenType = KEYWORDS.has(alpha) ? KEYWORDS.get(alpha) : TYPES.has(alpha) ? TYPES.get(alpha) : TokenType.Identifier;
+                    const tokenType = KEYWORDS.has(alpha) ? KEYWORDS.get(alpha) : TYPES.includes(alpha as Type) ? TokenType.Type : TokenType.Identifier;
 
                     const token = this.createToken(alpha, tokenType, alpha.length, position);
                     this.tokens.push(token);
