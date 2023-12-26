@@ -5,8 +5,10 @@ export const KEYWORDS = new Map<string, TokenType>([
     ["fn", TokenType.Function]
 ]);
 
-export const TYPES = ["string", "int", "float", "bool", "vector"] as const;
+export const BOOLEANS = ["true", "false"] as const;
+export type Boolean = typeof BOOLEANS[number];
 
+export const TYPES = ["string", "int", "float", "bool", "vector"] as const;
 export type Type = typeof TYPES[number];
 
 export const BRACKETS = new Map<string, TokenType>([
@@ -18,15 +20,8 @@ export const BRACKETS = new Map<string, TokenType>([
     ["}", TokenType.CloseBrace]
 ]);
 
-export const BINARY_OPERATORS = new Map<string, TokenType>([
-    ["+", TokenType.Addition],
-    ["-", TokenType.Subtraction],
-    ["*", TokenType.Multiplication],
-    ["/", TokenType.Division],
-    ["^", TokenType.Power],
-    ["#", TokenType.IntegerDivision],
-    ["%", TokenType.Modulo]
-]);
+export const BINARY_OPERATORS = ["+", "-", "*", "/", "^", "#", "%"] as const;
+export type BinaryOperator = typeof BINARY_OPERATORS[number];
 
 export const COMPARISON_OPERATORS = new Map<string, TokenType>([
     ["=", TokenType.Assignment],

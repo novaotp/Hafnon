@@ -12,4 +12,4 @@ writeToFile("tokens.txt", prettyTokens(tokens));
 const parser = new Parser(tokens, sourceCode);
 const ast = parser.produceAST();
 
-writeToFile("ast.txt", JSON.stringify(ast));
+writeToFile("ast.txt", ast);

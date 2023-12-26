@@ -2,7 +2,7 @@
 import { Position } from "./Position.js";
 import { Token } from "../token.js";
 import { TokenType } from "../tokenType.js";
-import { BINARY_OPERATORS, BRACKETS, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type } from "../constants.js";
+import { BINARY_OPERATORS, BOOLEANS, BRACKETS, BinaryOperator, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type, Boolean } from "../constants.js";
 
 export class Lexer {
     /** The raw source code. */
@@ -47,7 +47,7 @@ export class Lexer {
     }
 
     private isBinaryOperator(): boolean {
-        return BINARY_OPERATORS.has(this.currentChar());
+        return BINARY_OPERATORS.includes(this.currentChar() as BinaryOperator);
     }
 
     private isAlpha(): boolean {
@@ -98,7 +98,7 @@ export class Lexer {
                     const operator = this.advance();
                     const position = this.currentPosition.clone();
                     this.currentPosition.nextColumn();
-                    const token = this.createToken(operator, BINARY_OPERATORS.get(operator), 1, position);
+                    const token = this.createToken(operator, TokenType.BinaryOperator, 1, position);
                     this.tokens.push(token);
                     break;
                 }
@@ -158,7 +158,14 @@ export class Lexer {
                         this.currentPosition.nextColumn();
                     }
 
-                    const tokenType = KEYWORDS.has(alpha) ? KEYWORDS.get(alpha) : TYPES.includes(alpha as Type) ? TokenType.Type : TokenType.Identifier;
+                    const tokenType =
+                        KEYWORDS.has(alpha)
+                            ? KEYWORDS.get(alpha)
+                                : TYPES.includes(alpha as Type)
+                                    ? TokenType.Type
+                                : BOOLEANS.includes(alpha as Boolean)
+                            ? TokenType.Boolean
+                        : TokenType.Identifier;
 
                     const token = this.createToken(alpha, tokenType, alpha.length, position);
                     this.tokens.push(token);

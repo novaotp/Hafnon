@@ -11,13 +11,7 @@ export enum TokenType {
     Identifier,
 
     // Binary Operators
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Power,
-    IntegerDivision,
-    Modulo,
+    BinaryOperator,
 
     // Comparison Operators
     Assignment,
@@ -58,13 +52,7 @@ export const tokenToString = (token: TokenType): string => {
         case TokenType.Boolean: return "Boolean";
         case TokenType.Vector: return "Vector";
         case TokenType.Identifier: return "Identifier";
-        case TokenType.Addition: return "Addition";
-        case TokenType.Subtraction: return "Subtraction";
-        case TokenType.Multiplication: return "Multiplication";
-        case TokenType.Division: return "Division";
-        case TokenType.Power: return "Power";
-        case TokenType.IntegerDivision: return "IntegerDivision";
-        case TokenType.Modulo: return "Modulo";
+        case TokenType.BinaryOperator: return "BinaryOperator";
         case TokenType.Assignment: return "Assignment";
         case TokenType.Equal: return "Equal";
         case TokenType.NotEqual: return "NotEqual";

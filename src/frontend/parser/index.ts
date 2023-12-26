@@ -1,6 +1,7 @@
+import { writeToFile } from "../../helper.js";
 import { Token } from "../token.js";
 import { TokenType } from "../tokenType.js";
-import { ASTNode, ProgramNode, VariableDeclarationNode } from "./ast.js";
+import { ASTNode, BinaryExpression, BooleanLiteral, Expression, NumericLiteral, ProgramNode, StringLiteral, VariableDeclarationNode } from "./ast.js";
 import { ParserErrorLogger } from "./error.js";
 
 export class Parser {
@@ -29,6 +30,26 @@ export class Parser {
         return this.tokens.at(this.cursor);
     }
 
+    /**
+     * Produces the AST for the given tokens and prints every error that it has found.
+     * @returns An ASTNode representing the main program
+     */
+    public produceAST(): ProgramNode {
+        const programBody: ASTNode[] = [];
+
+        while (this.cursor < this.tokens.length && this.currentToken().type !== TokenType.EOF) {
+            const node = this.parse();
+            programBody.push(node);
+        }
+
+        this.errorLogger.display();
+
+        return {
+            kind: "Program",
+            body: programBody
+        } as ProgramNode;
+    }
+
     /** The entry point for parsing a statement or an expression. */
     private parse(): ASTNode {
         switch (this.currentToken().type) {
@@ -36,7 +57,7 @@ export class Parser {
             case TokenType.Type:
                 return this.parseVariableDeclaration();
             default:
-                throw new Error("Unimplemented parsing node value: " + this.currentToken().value);
+                this.parseExpression();
         }
     }
 
@@ -58,7 +79,7 @@ export class Parser {
         const type = this.advance().value;
         const identifier = this.advance().value;
 
-        let value: string;
+        let value: Expression | undefined;
         if (!isMutable && this.currentToken().value === ";") {
             this.errorLogger.add({
                 message: "Cannot declare an immutable variable without a value.",
@@ -66,13 +87,13 @@ export class Parser {
                 hint: "Either add a value or declare the variable as mutable."
             });
         } else if (this.currentToken().value === ";") {
-            value = "undefined";
+            value = undefined;
         } else {
             // Skip = char
             this.advance();
 
-            value = this.advance().value;
-        }
+            value = this.parseExpression();
+        }        
 
         // Skip ; char
         this.advance();
@@ -86,23 +107,93 @@ export class Parser {
         } as VariableDeclarationNode;
     }
 
-    /**
-     * Produces the AST for the given tokens and prints every error that it has found.
-     * @returns An ASTNode representing the main program
-     */
-    public produceAST(): ProgramNode {
-        const programBody: ASTNode[] = [];
+    /** The entry point to process expressions. */
+    private parseExpression(): Expression {
+        return this.parseAdditiveExpression();
+    }
 
-        while (this.cursor < this.tokens.length && this.currentToken().type !== TokenType.EOF) {
-            const node = this.parse();
-            programBody.push(node);
+    private parseAdditiveExpression(): Expression {
+        let left = this.parseMultiplicativeExpression();
+
+        while (["+", "-"].includes(this.currentToken().value)) {
+            const operator = this.advance().value;
+            const right = this.parseMultiplicativeExpression();
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator,
+            } as BinaryExpression;
         }
 
-        this.errorLogger.display();
+        return left;
+    }
 
-        return {
-            kind: "Program",
-            body: programBody
-        } as ProgramNode;
+    private parseMultiplicativeExpression(): Expression {
+        let left = this.parsePrimaryExpression();
+
+        while (
+            ["*", "/", "%", "#", "^"].includes(this.currentToken().value)
+        ) {
+            const operator = this.advance().value;
+            const right = this.parsePrimaryExpression();
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator,
+            } as BinaryExpression;
+        }
+
+        return left;
+    }
+
+    private parsePrimaryExpression(): Expression {
+        const token = this.advance();
+
+        switch (token.type) {
+            case TokenType.Integer:
+                return {
+                    kind: "NumericLiteral",
+                    value: parseInt(token.value),
+                } as NumericLiteral;
+
+            case TokenType.Float:
+                return {
+                    kind: "NumericLiteral",
+                    value: parseFloat(token.value),
+                } as NumericLiteral;
+
+            case TokenType.String:
+                return {
+                    kind: "StringLiteral",
+                    value: token.value,
+                } as StringLiteral;
+
+            case TokenType.Boolean:
+                return {
+                    kind: "BooleanLiteral",
+                    value: new Boolean(token.value).valueOf(),
+                } as BooleanLiteral;
+
+            case TokenType.OpenParen:
+                // Skip ( char
+                this.advance();
+
+                const value = this.parseExpression();
+
+                // Skip ) char
+                this.advance();
+
+                return value;
+
+            default:
+                console.error(
+                    "Unexpected token found during parsing !",
+                    this.currentToken(),
+                );
+                break;
+
+        }
     }
 }

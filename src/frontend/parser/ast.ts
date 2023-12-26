@@ -1,6 +1,6 @@
-import { Type } from "../constants.js";
+import { BinaryOperator, Type } from "../constants.js";
 
-type NodeType = "Program" | "VariableDeclaration";
+type NodeType = "Program" | "VariableDeclaration" | "BinaryExpression" | "NumericLiteral" | "StringLiteral" | "BooleanLiteral";
 
 export interface ASTNode {
     /** The kind of AST node. */
@@ -22,5 +22,37 @@ export interface VariableDeclarationNode extends ASTNode {
     /** The variable's identifier. */
     identifier: string;
     /** The value of the variable. */
+    value: Expression | undefined;
+}
+
+export interface Expression extends ASTNode { }
+
+export interface BinaryExpression extends Expression {
+    kind: "BinaryExpression";
+    /** The left operand of the expression. */
+    left: Expression;
+    /** The operator of the expression. */
+    operator: BinaryOperator;
+    /** The right operand of the expression. */
+    right: Expression;
+}
+
+export interface Literal extends Expression {
+    /** The value of the literal. */
+    value: string | number | boolean;
+}
+
+export interface StringLiteral extends Literal {
+    kind: "StringLiteral";
     value: string;
+}
+
+export interface NumericLiteral extends Literal {
+    kind: "NumericLiteral";
+    value: number;
+}
+
+export interface BooleanLiteral extends Literal {
+    kind: "BooleanLiteral";
+    value: boolean;
 }
