@@ -1,4 +1,3 @@
-
 export class Position {
     private defaultColumn: number;
     public column: number;

@@ -1,4 +1,3 @@
-
 export enum TokenType {
     // Primitives Types
     Integer,
@@ -73,6 +72,6 @@ export const tokenToString = (token: TokenType): string => {
         case TokenType.Mutable: return "Mutable";
         case TokenType.Function: return "Function";
         case TokenType.EOF: return "EOF";
-        default: "Unimplemented";
+        default: return "Unimplemented";
     }
 }

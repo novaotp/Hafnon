@@ -1,8 +1,20 @@
-import { writeToFile } from "../../helper.js";
-import { Token } from "../token.js";
-import { TokenType } from "../tokenType.js";
-import { ASTNode, BinaryExpression, BooleanLiteral, Expression, NumericLiteral, ProgramNode, StringLiteral, VariableDeclarationNode } from "./ast.js";
-import { ParserErrorLogger } from "./error.js";
+import { Token } from "../token";
+import { TokenType } from "../tokenType";
+import { ParserErrorLogger } from "./error";
+import {
+    ASTNode,
+    BinaryExpression,
+    BooleanLiteral,
+    Expression,
+    FunctionCallExpression,
+    FunctionDeclarationExpression,
+    NumericLiteral,
+    ProgramNode,
+    Statement,
+    StringLiteral,
+    VariableAssignmentStatement,
+    VariableDeclarationStatement
+} from "./ast";
 
 export class Parser {
     /** The array of tokens to parse. */
@@ -27,7 +39,12 @@ export class Parser {
 
     /** Returns the token at the {@link cursor | cursor's} position. */
     private currentToken(): Token {
-        return this.tokens.at(this.cursor);
+        return this.tokens.at(this.cursor)!;
+    }
+
+    /** Returns the token at the {@link cursor | (cursor + 1)'s} position. */
+    private nextToken(): Token {
+        return this.tokens.at(this.cursor + 1)!;
     }
 
     /**
@@ -56,8 +73,12 @@ export class Parser {
             case TokenType.Mutable:
             case TokenType.Type:
                 return this.parseVariableDeclaration();
+            case TokenType.Function:
+                return this.parseFunctionDeclaration();
+            case TokenType.Identifier:
+                return this.parseVariableAssignmentOrFunctionCall();
             default:
-                this.parseExpression();
+                return this.parseExpression();
         }
     }
 
@@ -65,8 +86,10 @@ export class Parser {
      * Parses a variable declaration statement.
      * @example
      * mutable int x = 42;
+     * @example
+     * vector<string> days = new Vector<string>("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
      */
-    private parseVariableDeclaration(): VariableDeclarationNode {
+    private parseVariableDeclaration(): VariableDeclarationStatement {
         const isMutable: boolean =
             this.currentToken().type === TokenType.Mutable
                 ? true
@@ -104,7 +127,127 @@ export class Parser {
             type: type,
             identifier: identifier,
             value: value
-        } as VariableDeclarationNode;
+        } as VariableDeclarationStatement;
+    }
+
+    /**
+     * Parses a function declaration.
+     * @example
+     * fn void greet()
+     * {
+     *     println("Hello world!");
+     * }
+     */
+    private parseFunctionDeclaration(): FunctionDeclarationExpression {
+        // Skip the fn token
+        this.advance();
+
+        const returnType = this.advance().value;
+        const identifier = this.advance().value;
+
+        /**
+         * For now, skip the function args.
+         */
+        // Skip the ( token
+        this.advance();
+        // Skip the ) token
+        this.advance();
+        const args: Expression[] = [];
+
+        // Skip the { token
+        this.advance();
+
+        const body: Statement[] = [];
+        while (this.currentToken().type !== TokenType.CloseBrace) {
+            const statement = this.parse();
+            body.push(statement);
+        }
+
+        // Skip the } token
+        this.advance();
+
+        return {
+            kind: "FunctionDeclaration",
+            returnType,
+            identifier,
+            arguments: args,
+            body
+        } as FunctionDeclarationExpression;
+    }
+
+    private parseVariableAssignmentOrFunctionCall(): VariableAssignmentStatement | FunctionCallExpression {
+        const nextToken = this.nextToken();
+
+        if (nextToken.type === TokenType.Assignment) {
+            return this.parseVariableAssignment();
+        } else {
+            return this.parseFunctionCall();
+        }
+    }
+
+    /**
+     * Parses a variable assignment.
+     * @example
+     * mutable int niceNumber = 69;
+     * niceNumber = 420; // <- No error
+     * @example
+     * string helloWorld = "hello world";
+     * helloWorld = "goodbye world"; // <- Error thrown because helloWorld isn't mutable
+     */
+    private parseVariableAssignment(): VariableAssignmentStatement {
+        const identifier = this.advance().value;
+
+        // Skip the = token
+        this.advance();
+
+        const newValue = this.parseExpression();
+
+        // Skip the ; token
+        this.advance();
+
+        return {
+            kind: "VariableAssignment",
+            identifier,
+            newValue
+        } as VariableAssignmentStatement;
+    }
+
+    /**
+     * Parses a function call.
+     * @example
+     * fn void greet()
+     * {
+     *     println("Hello world!");
+     * }
+     * greet();
+     * @example
+     * fn float complexCalculation(float a, float b)
+     * {
+     *     return a * b;
+     * }
+     * float result = complexCalculation(1, 2);
+     * complexCalculation(complexCalculation(2, 6), result);
+     */
+    private parseFunctionCall(): FunctionCallExpression {
+        const identifier = this.advance().value;
+
+        /**
+         * For now, skip the function params.
+         */
+        // Skip the ( token
+        this.advance();
+        // Skip the ) token
+        this.advance();
+        const parameters: Expression[] = [];
+
+        // Skip the ; token
+        this.advance();
+
+        return {
+            kind: "FunctionCall",
+            identifier,
+            parameters
+        } as FunctionCallExpression
     }
 
     /** The entry point to process expressions. */
@@ -188,11 +331,12 @@ export class Parser {
                 return value;
 
             default:
-                console.error(
-                    "Unexpected token found during parsing !",
-                    this.currentToken(),
-                );
-                break;
+                this.errorLogger.add({
+                    message: "Unexpected token found during parsing",
+                    token: this.currentToken(),
+                    hint: "Ask the maintainers to support this token."
+                });
+                return { kind: "BinaryExpression" } as Expression;
 
         }
     }

@@ -1,6 +1,15 @@
-import { BinaryOperator, Type } from "../constants.js";
+import { BinaryOperator, Type } from "../constants";
 
-type NodeType = "Program" | "VariableDeclaration" | "BinaryExpression" | "NumericLiteral" | "StringLiteral" | "BooleanLiteral";
+type NodeType =
+    "Program" |
+    "VariableDeclaration" |
+    "VariableAssignment" |
+    "FunctionDeclaration" |
+    "FunctionCall" |
+    "BinaryExpression" |
+    "NumericLiteral" |
+    "StringLiteral" |
+    "BooleanLiteral";
 
 export interface ASTNode {
     /** The kind of AST node. */
@@ -13,19 +22,49 @@ export interface ProgramNode extends ASTNode {
     body: ASTNode[];
 }
 
-export interface VariableDeclarationNode extends ASTNode {
+export interface Statement extends ASTNode { }
+
+export interface VariableDeclarationStatement extends Statement {
     kind: "VariableDeclaration";
     /** If the variable is mutable or not. */
     isMutable: boolean;
     /** The static type of the variable. */
     type: Type;
-    /** The variable's identifier. */
+    /** The name of the variable. */
     identifier: string;
     /** The value of the variable. */
     value: Expression | undefined;
 }
 
-export interface Expression extends ASTNode { }
+export interface VariableAssignmentStatement extends Statement {
+    kind: "VariableAssignment";
+    /** The name of the variable. */
+    identifier: string;
+    /** The new value of the variable. */
+    newValue: Expression | undefined;
+}
+
+export interface Expression extends Statement { }
+    
+export interface FunctionDeclarationExpression extends Expression {
+    kind: "FunctionDeclaration";
+    /** The return type of the function. */
+    returnType: Type;
+    /** The name of the function. */
+    identifier: string;
+    /** The function's arguments. */
+    arguments: Statement[];
+    /** The function's body. */
+    body: Statement[];
+}
+
+export interface FunctionCallExpression extends Expression {
+    kind: "FunctionCall";
+    /** The name of the function to call. */
+    identifier: string;
+    /** The function's parameters. */
+    parameters: Expression[];
+}
 
 export interface BinaryExpression extends Expression {
     kind: "BinaryExpression";

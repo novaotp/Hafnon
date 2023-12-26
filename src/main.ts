@@ -1,6 +1,6 @@
-import { Lexer } from './frontend/lexer/index.js';
-import { Parser } from './frontend/parser/index.js';
-import { prettyTokens, readSourceFile, writeToFile } from './helper.js';
+import { Lexer } from './frontend/lexer';
+import { Parser } from './frontend/parser';
+import { prettyTokens, readSourceFile, writeToFile } from './helper';
 
 const sourceCode = readSourceFile("src.haf");
 

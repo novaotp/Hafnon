@@ -1,8 +1,19 @@
 
-import { Position } from "./Position.js";
-import { Token } from "../token.js";
-import { TokenType } from "../tokenType.js";
-import { BINARY_OPERATORS, BOOLEANS, BRACKETS, BinaryOperator, COMPARISON_OPERATORS, KEYWORDS, PUNCTUATIONS, TYPES, Type, Boolean } from "../constants.js";
+import { Position } from "./Position";
+import { Token } from "../token";
+import { TokenType } from "../tokenType";
+import {
+    BINARY_OPERATORS,
+    BOOLEANS,
+    BRACKETS,
+    BinaryOperator,
+    COMPARISON_OPERATORS,
+    KEYWORDS,
+    PUNCTUATIONS,
+    TYPES,
+    Type,
+    Boolean
+} from "../constants";
 
 export class Lexer {
     /** The raw source code. */
@@ -31,7 +42,7 @@ export class Lexer {
 
     /** Returns the current char. */
     private currentChar(): string {
-        return this.chars.at(this.cursor);
+        return this.chars.at(this.cursor)!;
     }
 
     /** Returns the current character and advances the index. */
@@ -89,7 +100,7 @@ export class Lexer {
                     const bracket = this.advance();
                     const position = this.currentPosition.clone();
                     this.currentPosition.nextColumn();
-                    const token = this.createToken(bracket, BRACKETS.get(bracket), 1, position);
+                    const token = this.createToken(bracket, BRACKETS.get(bracket)!, 1, position);
                     this.tokens.push(token);
                     break;
                 }
@@ -107,7 +118,7 @@ export class Lexer {
                     const operator = this.advance();
                     const position = this.currentPosition.clone();
                     this.currentPosition.nextColumn();
-                    const token = this.createToken(operator, PUNCTUATIONS.get(operator), 1, position);
+                    const token = this.createToken(operator, PUNCTUATIONS.get(operator)!, 1, position);
                     this.tokens.push(token);
                     break;
                 }
@@ -144,7 +155,7 @@ export class Lexer {
                         this.currentPosition.nextColumn();
                     }
 
-                    const token = this.createToken(operator, COMPARISON_OPERATORS.get(operator), operator.length, position);
+                    const token = this.createToken(operator, COMPARISON_OPERATORS.get(operator)!, operator.length, position);
                     this.tokens.push(token);
                     break;
                 }
@@ -159,7 +170,7 @@ export class Lexer {
                     }
 
                     const tokenType =
-                        KEYWORDS.has(alpha)
+                        !KEYWORDS.has(alpha)
                             ? KEYWORDS.get(alpha)
                                 : TYPES.includes(alpha as Type)
                                     ? TokenType.Type
@@ -167,7 +178,7 @@ export class Lexer {
                             ? TokenType.Boolean
                         : TokenType.Identifier;
 
-                    const token = this.createToken(alpha, tokenType, alpha.length, position);
+                    const token = this.createToken(alpha, tokenType!, alpha.length, position);
                     this.tokens.push(token);
                     break;
                 }

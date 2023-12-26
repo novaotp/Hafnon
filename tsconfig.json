@@ -1,11 +1,13 @@
 {
     "compilerOptions": {
         "experimentalDecorators": true,
-        "moduleResolution": "NodeNext",
+        "moduleResolution": "Bundler",
+        "strict": true,
+        "esModuleInterop": true,
         "lib": ["ES2023"],
-        "module": "NodeNext",
+        "module": "ES2022",
         "target": "ES6",
         "rootDir": "src",
-        "outDir": "build"
+        "outDir": "build",
     }
 }

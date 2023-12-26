@@ -2,8 +2,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Token } from './frontend/token.js';
-import { tokenToString } from './frontend/tokenType.js';
+import { Token } from './frontend/token';
+import { tokenToString } from './frontend/tokenType';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,13 +27,13 @@ export const writeToFile = (filename: string, data: any) => {
 }
 
 export const prettyTokens = (tokens: Token[]): string => {
-    let printedTokens = "[\n";
+    let printedTokens = "[\r\n";
 
     for (const token of tokens) {
         printedTokens += `\t{ Value : ${token.value} | Type : ${tokenToString(token.type)} | Length : ${token.length} | Position : ${token.position.toString()} }\n`;
     }
 
-    printedTokens += "]\n";
+    printedTokens += "]\r\n";
 
     return printedTokens;
 }

@@ -5,17 +5,18 @@
   "main": "node build/main.js",
   "type": "module",
   "scripts": {
-    "prebuild": "rd /s /q build",
-    "build": "tsc",
-    "start": "node build/main.js",
-    "pipe": "npm run build && npm start"
+    "build": "webpack",
+    "dev": "node build/index.cjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.10.5",
-    "typescript": "^5.3.3"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "chalk": "^5.3.0"

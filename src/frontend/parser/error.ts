@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { Token } from "../token.js";
+import { Token } from "../token";
 
 interface ParserError {
     /** The error message to display. */
