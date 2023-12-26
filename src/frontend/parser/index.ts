@@ -119,7 +119,8 @@ export class Parser {
         }        
 
         // Skip ; char
-        this.advance();
+        const skipped = this.advance();
+        console.log("Skipped token: ", skipped);
 
         return {
             kind: "VariableDeclaration",
@@ -293,6 +294,7 @@ export class Parser {
 
     private parsePrimaryExpression(): Expression {
         const token = this.advance();
+        console.log(`Token Value : ${token.value} | Is String ? ${token.type === TokenType.String}`);
 
         switch (token.type) {
             case TokenType.Integer:
@@ -310,7 +312,7 @@ export class Parser {
             case TokenType.String:
                 return {
                     kind: "StringLiteral",
-                    value: token.value,
+                    value: new String(token.value).valueOf(),
                 } as StringLiteral;
 
             case TokenType.Boolean:

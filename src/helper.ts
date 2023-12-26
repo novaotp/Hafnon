@@ -8,7 +8,7 @@ import { tokenToString } from './frontend/tokenType';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const readSourceFile = (filename: string) => fs.readFileSync(path.join(__dirname, '..', filename), { encoding: "utf-8" });
+export const readSourceFile = (filename: string) => fs.readFileSync(path.join(__dirname, '.', filename), { encoding: "utf-8" });
 
 /**
  * Serializes the data and writes it to the specified file.
