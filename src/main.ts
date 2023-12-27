@@ -7,9 +7,9 @@ const sourceCode = readSourceFile("src.haf");
 const lexer = new Lexer(sourceCode);
 const tokens = lexer.tokenize();
 
-writeToFile("tokens.txt", prettyTokens(tokens));
+writeToFile("tokens.json", prettyTokens(tokens));
 
 const parser = new Parser(tokens, sourceCode);
 const ast = parser.produceAST();
 
-writeToFile("ast.txt", ast);
+writeToFile("ast.json", ast);

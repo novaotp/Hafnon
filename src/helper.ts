@@ -23,17 +23,15 @@ export const writeToFile = (filename: string, data: any) => {
         fs.mkdirSync(outputDirectory, { recursive: true });
     }
 
-    fs.writeFileSync(outputPath, JSON.stringify(data), { encoding: 'utf-8' });
+    fs.writeFileSync(outputPath, JSON.stringify(data), { encoding: 'utf-8', flag: 'w+' });
 }
 
-export const prettyTokens = (tokens: Token[]): string => {
-    let printedTokens = "[\r\n";
+export const prettyTokens = (tokens: Token[]) => {
+    let printedTokens = [];
 
     for (const token of tokens) {
-        printedTokens += `\t{ Value : ${token.value} | Type : ${tokenToString(token.type)} | Length : ${token.length} | Position : ${token.position.toString()} }\n`;
+        printedTokens.push({ "value" : token.value, "type" : tokenToString(token.type), "length" : token.length, "position" : { column: token.position.column, line: token.position.line }});
     }
-
-    printedTokens += "]\r\n";
 
     return printedTokens;
 }
