@@ -16,7 +16,7 @@ export const readSourceFile = (filename: string) => fs.readFileSync(path.join(__
  * @param data The serializable data to write
  */
 export const writeToFile = (filename: string, data: any) => {
-    const outputPath = path.join(__dirname, '../output/', filename);
+    const outputPath = path.join(__dirname, '/output/', filename);
     const outputDirectory = path.dirname(outputPath);
 
     if (!fs.existsSync(outputDirectory)) {

@@ -170,13 +170,13 @@ export class Lexer {
                     }
 
                     const tokenType =
-                        !KEYWORDS.has(alpha)
+                        KEYWORDS.has(alpha)
                             ? KEYWORDS.get(alpha)
-                                : TYPES.includes(alpha as Type)
-                                    ? TokenType.Type
-                                : BOOLEANS.includes(alpha as Boolean)
-                            ? TokenType.Boolean
-                        : TokenType.Identifier;
+                            : TYPES.includes(alpha as Type)
+                                ? TokenType.Type
+                                    : BOOLEANS.includes(alpha as Boolean)
+                                        ? TokenType.Boolean
+                                        : TokenType.Identifier;
 
                     const token = this.createToken(alpha, tokenType!, alpha.length, position);
                     this.tokens.push(token);

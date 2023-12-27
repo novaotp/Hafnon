@@ -90,10 +90,7 @@ export class Parser {
      * vector<string> days = new Vector<string>("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
      */
     private parseVariableDeclaration(): VariableDeclarationStatement {
-        const isMutable: boolean =
-            this.currentToken().type === TokenType.Mutable
-                ? true
-                : false;
+        const isMutable: boolean = this.currentToken().type === TokenType.Mutable;
 
         if (isMutable) {
             this.advance();
@@ -116,11 +113,10 @@ export class Parser {
             this.advance();
 
             value = this.parseExpression();
-        }        
+        }
 
         // Skip ; char
         const skipped = this.advance();
-        console.log("Skipped token: ", skipped);
 
         return {
             kind: "VariableDeclaration",
@@ -294,7 +290,6 @@ export class Parser {
 
     private parsePrimaryExpression(): Expression {
         const token = this.advance();
-        console.log(`Token Value : ${token.value} | Is String ? ${token.type === TokenType.String}`);
 
         switch (token.type) {
             case TokenType.Integer:
