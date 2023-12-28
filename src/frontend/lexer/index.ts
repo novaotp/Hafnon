@@ -1,4 +1,3 @@
-
 import { Position } from "./position";
 import { Token } from "../token";
 import { TokenType } from "../tokenType";
@@ -164,7 +163,7 @@ export class Lexer {
                     let alpha = "";
                     const position = this.currentPosition.clone();
 
-                    while ((this.cursor < this.chars.length) && /[a-zA-Z0-9]/.test(this.currentChar())) {
+                    while ((this.cursor < this.chars.length) && /[a-zA-Z0-9_]/.test(this.currentChar())) {
                         alpha += this.advance();
                         this.currentPosition.nextColumn();
                     }
