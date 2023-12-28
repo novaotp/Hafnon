@@ -6,17 +6,24 @@ type NodeType =
     "VariableAssignment" |
     "FunctionDeclaration" |
     "FunctionCall" |
+    "ConditionalExpression" |
     "BinaryExpression" |
     "NumericLiteral" |
     "StringLiteral" |
     "BooleanLiteral" | 
-    "VectorExpression";
-
-
+    "VectorExpression" |
+    "Identifier";
 
 interface ASTNode {
     /** The kind of AST node. */
     kind: NodeType;
+}
+
+export const defaultConditionalGroup = (): AST.Expression.ConditionalGroup => {
+    return {
+        condition: { kind: "BooleanLiteral", value: true } as AST.Expression.Literal.Boolean,
+        body: []
+    } as AST.Expression.ConditionalGroup;
 }
 
 /** The root namespace for the AST nodes. */
@@ -80,6 +87,18 @@ export namespace AST {
             parameters: Expression[];
         }
 
+        export interface ConditionalGroup {
+            condition: Expression;
+            body: Statement[];
+        }
+
+        export interface Conditional extends Expression {
+            kind: "ConditionalExpression";
+            if: ConditionalGroup;
+            elif: ConditionalGroup[] | undefined;
+            else: ConditionalGroup | undefined;
+        }
+
         export interface Binary extends Expression {
             kind: "BinaryExpression";
             /** The left operand of the expression. */
@@ -88,6 +107,12 @@ export namespace AST {
             operator: BinaryOperator;
             /** The right operand of the expression. */
             right: Expression;
+        }
+
+        export interface Identifier {
+            kind: "Identifier",
+            /** The symbol of the variable. */
+            symbol: string;
         }
 
         export interface Vector extends Expression {

@@ -1,0 +1,10 @@
+int myLuckyNumber = 69;
+string message = if (myLuckyNumber < 0) {
+    "Please enter a positive number"
+} elif (myLuckyNumber < 50) {
+    "It isn't lucky enough"
+} elif (myLuckyNumber > 100) {
+    "Too big"
+} else {
+    "Nice"
+}
