@@ -1,14 +1,17 @@
 
 import fs from 'fs';
-import path from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Token } from './frontend/token';
 import { tokenToString } from './frontend/tokenType';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const readSourceFile = (filename: string) => fs.readFileSync(path.join(__dirname, '.', filename), { encoding: "utf-8" });
+/**
+ * Reads from a file and returns its content.
+ * @param path The relative path of the file from the root directory
+ */
+export const readSourceFile = (path: string) => fs.readFileSync(join(__dirname, path), { encoding: "utf-8" });
 
 /**
  * Serializes the data and writes it to the specified file.
@@ -16,14 +19,14 @@ export const readSourceFile = (filename: string) => fs.readFileSync(path.join(__
  * @param data The serializable data to write
  */
 export const writeToFile = (filename: string, data: any) => {
-    const outputPath = path.join(__dirname, '/output/', filename);
-    const outputDirectory = path.dirname(outputPath);
+    const outputPath = join(__dirname, '/output/', filename);
+    const outputDirectory = dirname(outputPath);
 
     if (!fs.existsSync(outputDirectory)) {
         fs.mkdirSync(outputDirectory, { recursive: true });
     }
 
-    fs.writeFileSync(outputPath, JSON.stringify(data), { encoding: 'utf-8', flag: 'w+' });
+    fs.writeFileSync(outputPath, data, { encoding: 'utf-8', flag: 'w' });
 }
 
 export const prettyTokens = (tokens: Token[]) => {
