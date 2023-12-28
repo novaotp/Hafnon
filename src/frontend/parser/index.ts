@@ -1,7 +1,7 @@
 import { Token } from "../token";
 import { TokenType, tokenToString } from "../tokenType";
 import { ParserErrorLogger } from "./error";
-import { AST } from "./ast";
+import { AST, defaultConditionalGroup } from "./ast";
 
 export class Parser {
     /** The array of tokens to parse. */
@@ -277,13 +277,85 @@ export class Parser {
 
     /** The entry point to process expressions. */
     private parseExpression(): AST.Expression {
-        return this.parseVectorExpression();
+        return this.parseConditionalExpression();
+    }
+
+    /** Parses a if-elif-else branch. */
+    private parseConditionalExpression(): AST.Expression {
+        if (this.currentToken().type !== TokenType.If) {
+            return this.parseVectorExpression();
+        }
+
+        let ifGroup: AST.Expression.ConditionalGroup = defaultConditionalGroup();
+
+        this.expect(TokenType.If);
+        this.expect(TokenType.OpenParen);
+
+        ifGroup.condition = this.parseExpression();
+
+        this.expect(TokenType.CloseParen);
+        this.expect(TokenType.OpenBrace);
+
+        while (this.currentToken().type !== TokenType.CloseBrace) {
+            const statement = this.parse();
+            ifGroup.body.push(statement);
+        }
+
+        this.expect(TokenType.CloseBrace);
+
+        let elifGroup: AST.Expression.ConditionalGroup[] | undefined = undefined;
+        while (this.currentToken().type === TokenType.Elif) {
+            if (elifGroup === undefined) {
+                elifGroup = [];
+            }
+
+            this.expect(TokenType.Elif);
+            this.expect(TokenType.OpenParen);
+
+            const elif: AST.Expression.ConditionalGroup = defaultConditionalGroup();
+
+            elif.condition = this.parseExpression();
+
+            this.expect(TokenType.CloseParen);
+            this.expect(TokenType.OpenBrace);
+
+            while (this.currentToken().type !== TokenType.CloseBrace) {
+                const statement = this.parse();
+                elif.body.push(statement);
+            }
+
+            this.expect(TokenType.CloseBrace);
+
+            elifGroup?.push(elif);
+        }
+
+        let elseGroup: AST.Expression.ConditionalGroup | undefined = undefined;
+        if (this.currentToken().type === TokenType.Else) {
+            elseGroup = defaultConditionalGroup();
+
+            this.expect(TokenType.Else);
+            this.expect(TokenType.OpenBrace);
+
+            while (this.currentToken().type !== TokenType.CloseBrace) {
+                const statement = this.parse();
+                elseGroup.body.push(statement);
+            }
+
+            this.expect(TokenType.CloseBrace);
+        }
+
+        return {
+            kind: "ConditionalExpression",
+            if: ifGroup,
+            elif: elifGroup,
+            else: elseGroup
+        } as AST.Expression.Conditional;
     }
 
     /** Parses a vector. */
     private parseVectorExpression(): AST.Expression {
         if (this.currentToken().type !== TokenType.OpenBracket) {
-            return this.parseAdditiveExpression();
+            return this.parseComparativeExpression();
         }
 
         // Skip [ token
@@ -307,6 +379,23 @@ export class Parser {
             kind: "VectorExpression",
             values
         } as AST.Expression.Vector;
+    }
+
+    private parseComparativeExpression(): AST.Expression {
+        let left = this.parseAdditiveExpression();
+
+        while (["==", "<", ">", "<=", ">=", "!="].includes(this.currentToken().value)) {
+            const operator = this.advance().value;
+            const right = this.parseAdditiveExpression();
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator,
+            } as AST.Expression.Binary;
+        }
+
+        return left;
     }
 
     private parseAdditiveExpression(): AST.Expression {
@@ -367,6 +456,12 @@ export class Parser {
                     value: new String(token.value).valueOf(),
                 } as AST.Expression.Literal.String;
 
+            case TokenType.Identifier:
+                return {
+                    kind: "Identifier",
+                    symbol: new String(token.value).valueOf()
+                } as AST.Expression.Identifier;
+
             case TokenType.Boolean:
                 return {
                     kind: "BooleanLiteral",
@@ -374,18 +469,16 @@ export class Parser {
                 } as AST.Expression.Literal.Boolean;
 
             case TokenType.OpenParen:
-                // Skip ( char
-                this.advance();
+                this.expect(TokenType.OpenParen);
 
                 const value = this.parseExpression();
 
-                // Skip ) char
-                this.advance();
+                this.expect(TokenType.CloseParen);
 
                 return value;
 
             default:
-                throw new Error("Unexpected token type: " + tokenToString(token.type));
+                throw new Error("Unexpected token: " + JSON.stringify(token));
 
         }
     }

@@ -1,5 +1,5 @@
 
-import { Position } from "./Position";
+import { Position } from "./position";
 import { Token } from "../token";
 import { TokenType } from "../tokenType";
 import {
@@ -53,7 +53,7 @@ export class Lexer {
         return char;
     }
 
-    private createToken(value: string, type: TokenType, length: number, position: Position): Token {
+    private createToken(value: string, type: TokenType, length: number, position: { column: number, line: number }): Token {
         return { value, type, length, position };
     }
 

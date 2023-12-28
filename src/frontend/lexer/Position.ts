@@ -1,10 +1,8 @@
 export class Position {
-    private defaultColumn: number;
     public column: number;
     public line: number;
 
     constructor(column: number, line: number) {
-        this.defaultColumn = column;
         this.column = column;
         this.line = line;
     }
@@ -14,16 +12,12 @@ export class Position {
     }
 
     /** Also resets the column. */
-    public nextLine(): void {
+    public nextLine(column: number = 1): void {
         this.line += 1;
-        this.column = this.defaultColumn;
+        this.column = column;
     }
 
-    public clone(): Position {
-        return new Position(this.column, this.line);
-    }
-
-    public toString(): string {
-        return `(column: ${this.column} | line: ${this.line})`;
+    public clone(): { column: number; line: number } {
+        return { column: this.column, line: this.line };
     }
 }
