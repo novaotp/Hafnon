@@ -1,4 +1,4 @@
-import { BinaryOperator, Type } from "../constants";
+import { BinaryOperator } from "../constants";
 
 type NodeType =
     "Program" |
@@ -12,6 +12,8 @@ type NodeType =
     "BooleanLiteral" | 
     "VectorExpression";
 
+
+
 interface ASTNode {
     /** The kind of AST node. */
     kind: NodeType;
@@ -19,6 +21,12 @@ interface ASTNode {
 
 /** The root namespace for the AST nodes. */
 export namespace AST {
+    export interface VectorType {
+        type: "vector",
+        subType: Type
+    }
+    export type Type = "any" | "string" | "int" | "float" | "bool" | VectorType;
+
     export interface Program extends ASTNode {
         kind: "Program";
         /** The full program body. */

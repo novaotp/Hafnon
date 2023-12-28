@@ -1,5 +1,5 @@
 import { Token } from "../token";
-import { TokenType } from "../tokenType";
+import { TokenType, tokenToString } from "../tokenType";
 import { ParserErrorLogger } from "./error";
 import { AST } from "./ast";
 
@@ -32,6 +32,21 @@ export class Parser {
     /** Returns the token at the {@link cursor | (cursor + 1)'s} position. */
     private nextToken(): Token {
         return this.tokens.at(this.cursor + 1)!;
+    }
+
+    /**
+     * Throws an error if the current token type isn't the expected type.
+     * 
+     * Otherwise, works the same as {@link advance | `this.advance`} method.
+     */
+    private expect(expectedToken: TokenType): Token {
+        const token = this.advance();
+
+        if (token.type !== expectedToken) {
+            throw new Error(`Expected token : ${tokenToString(expectedToken)} | Got : ${tokenToString(token.type)}`);
+        }
+
+        return token;
     }
 
     /**
@@ -74,7 +89,9 @@ export class Parser {
      * @example
      * mutable int x = 42;
      * @example
+     * // Both yield the same result
      * vector<string> days = new Vector<string>("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
+     * vector<string> days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
      */
     private parseVariableDeclaration(): AST.Statement.VariableDeclaration {
         const isMutable: boolean = this.currentToken().type === TokenType.Mutable;
@@ -83,7 +100,31 @@ export class Parser {
             this.advance();
         }
 
-        const type = this.advance().value;
+        const typeToken = this.expect(TokenType.Type);
+
+        let type: AST.Type;
+
+        if (typeToken.value === "vector") {
+            let subType: AST.Type = "any";
+
+            if (this.currentToken().type === TokenType.LessThan) {
+                // Skip < token
+                this.advance();
+
+                subType = this.expect(TokenType.Type).value as AST.Type;
+
+                // Skip > token
+                this.expect(TokenType.GreaterThan);
+            }
+
+            type = {
+                type: "vector",
+                subType
+            } as AST.VectorType;
+        } else {
+            type = typeToken.value as AST.Type;
+        }
+
         const identifier = this.advance().value;
 
         let value: AST.Expression | undefined;
@@ -239,13 +280,14 @@ export class Parser {
         return this.parseVectorExpression();
     }
 
+    /** Parses a vector. */
     private parseVectorExpression(): AST.Expression {
         if (this.currentToken().type !== TokenType.OpenBracket) {
             return this.parseAdditiveExpression();
         }
 
         // Skip [ token
-        this.advance();
+        this.expect(TokenType.OpenBracket);
 
         const values: AST.Expression[] = [];
         while (this.currentToken().type !== TokenType.CloseBracket) {
@@ -258,7 +300,8 @@ export class Parser {
             }
         }
 
-        this.advance();
+        // Skip ] token
+        this.expect(TokenType.CloseBracket);
 
         return {
             kind: "VectorExpression",
@@ -342,7 +385,7 @@ export class Parser {
                 return value;
 
             default:
-                throw new Error("Unexpected token type: " + token.type);
+                throw new Error("Unexpected token type: " + tokenToString(token.type));
 
         }
     }

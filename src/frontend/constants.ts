@@ -8,7 +8,7 @@ export const KEYWORDS = new Map<string, TokenType>([
 export const BOOLEANS = ["true", "false"] as const;
 export type Boolean = typeof BOOLEANS[number];
 
-export const TYPES = ["string", "int", "float", "bool", "vector"] as const;
+export const TYPES = ["string", "int", "float", "bool", "vector", "any"] as const;
 export type Type = typeof TYPES[number];
 
 export const BRACKETS = new Map<string, TokenType>([

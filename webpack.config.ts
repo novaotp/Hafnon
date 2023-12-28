@@ -9,7 +9,8 @@ const __dirname = path.dirname(__filename);
 
 const config: webpack.Configuration = {
     entry: './src/main.ts',
-    mode: "production",
+    mode: 'development',
+    devtool: 'source-map',
     module: {
         rules: [
             {
