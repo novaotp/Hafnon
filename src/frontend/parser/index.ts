@@ -1,20 +1,7 @@
 import { Token } from "../token";
 import { TokenType } from "../tokenType";
 import { ParserErrorLogger } from "./error";
-import {
-    ASTNode,
-    BinaryExpression,
-    BooleanLiteral,
-    Expression,
-    FunctionCallExpression,
-    FunctionDeclarationExpression,
-    NumericLiteral,
-    ProgramNode,
-    Statement,
-    StringLiteral,
-    VariableAssignmentStatement,
-    VariableDeclarationStatement
-} from "./ast";
+import { AST } from "./ast";
 
 export class Parser {
     /** The array of tokens to parse. */
@@ -51,8 +38,8 @@ export class Parser {
      * Produces the AST for the given tokens and prints every error that it has found.
      * @returns An ASTNode representing the main program
      */
-    public produceAST(): ProgramNode {
-        const programBody: ASTNode[] = [];
+    public produceAST(): AST.Program {
+        const programBody: AST.Statement[] = [];
 
         while (this.cursor < this.tokens.length && this.currentToken().type !== TokenType.EOF) {
             const node = this.parse();
@@ -64,11 +51,11 @@ export class Parser {
         return {
             kind: "Program",
             body: programBody
-        } as ProgramNode;
+        } as AST.Program;
     }
 
     /** The entry point for parsing a statement or an expression. */
-    private parse(): ASTNode {
+    private parse(): AST.Statement {
         switch (this.currentToken().type) {
             case TokenType.Mutable:
             case TokenType.Type:
@@ -89,7 +76,7 @@ export class Parser {
      * @example
      * vector<string> days = new Vector<string>("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
      */
-    private parseVariableDeclaration(): VariableDeclarationStatement {
+    private parseVariableDeclaration(): AST.Statement.VariableDeclaration {
         const isMutable: boolean = this.currentToken().type === TokenType.Mutable;
 
         if (isMutable) {
@@ -99,7 +86,7 @@ export class Parser {
         const type = this.advance().value;
         const identifier = this.advance().value;
 
-        let value: Expression | undefined;
+        let value: AST.Expression | undefined;
         if (!isMutable && this.currentToken().value === ";") {
             this.errorLogger.add({
                 message: "Cannot declare an immutable variable without a value.",
@@ -116,7 +103,7 @@ export class Parser {
         }
 
         // Skip ; char
-        const skipped = this.advance();
+        this.advance();
 
         return {
             kind: "VariableDeclaration",
@@ -124,7 +111,7 @@ export class Parser {
             type: type,
             identifier: identifier,
             value: value
-        } as VariableDeclarationStatement;
+        } as AST.Statement.VariableDeclaration;
     }
 
     /**
@@ -135,7 +122,7 @@ export class Parser {
      *     println("Hello world!");
      * }
      */
-    private parseFunctionDeclaration(): FunctionDeclarationExpression {
+    private parseFunctionDeclaration(): AST.Expression.FunctionDeclaration {
         // Skip the fn token
         this.advance();
 
@@ -149,12 +136,12 @@ export class Parser {
         this.advance();
         // Skip the ) token
         this.advance();
-        const args: Expression[] = [];
+        const args: AST.Expression[] = [];
 
         // Skip the { token
         this.advance();
 
-        const body: Statement[] = [];
+        const body: AST.Statement[] = [];
         while (this.currentToken().type !== TokenType.CloseBrace) {
             const statement = this.parse();
             body.push(statement);
@@ -169,10 +156,10 @@ export class Parser {
             identifier,
             arguments: args,
             body
-        } as FunctionDeclarationExpression;
+        } as AST.Expression.FunctionDeclaration;
     }
 
-    private parseVariableAssignmentOrFunctionCall(): VariableAssignmentStatement | FunctionCallExpression {
+    private parseVariableAssignmentOrFunctionCall(): AST.Statement.VariableAssignment | AST.Expression.FunctionCall {
         const nextToken = this.nextToken();
 
         if (nextToken.type === TokenType.Assignment) {
@@ -191,7 +178,7 @@ export class Parser {
      * string helloWorld = "hello world";
      * helloWorld = "goodbye world"; // <- Error thrown because helloWorld isn't mutable
      */
-    private parseVariableAssignment(): VariableAssignmentStatement {
+    private parseVariableAssignment(): AST.Statement.VariableAssignment {
         const identifier = this.advance().value;
 
         // Skip the = token
@@ -206,7 +193,7 @@ export class Parser {
             kind: "VariableAssignment",
             identifier,
             newValue
-        } as VariableAssignmentStatement;
+        } as AST.Statement.VariableAssignment;
     }
 
     /**
@@ -225,7 +212,7 @@ export class Parser {
      * float result = complexCalculation(1, 2);
      * complexCalculation(complexCalculation(2, 6), result);
      */
-    private parseFunctionCall(): FunctionCallExpression {
+    private parseFunctionCall(): AST.Expression.FunctionCall {
         const identifier = this.advance().value;
 
         /**
@@ -235,7 +222,7 @@ export class Parser {
         this.advance();
         // Skip the ) token
         this.advance();
-        const parameters: Expression[] = [];
+        const parameters: AST.Expression[] = [];
 
         // Skip the ; token
         this.advance();
@@ -244,15 +231,42 @@ export class Parser {
             kind: "FunctionCall",
             identifier,
             parameters
-        } as FunctionCallExpression
+        } as AST.Expression.FunctionCall;
     }
 
     /** The entry point to process expressions. */
-    private parseExpression(): Expression {
-        return this.parseAdditiveExpression();
+    private parseExpression(): AST.Expression {
+        return this.parseVectorExpression();
     }
 
-    private parseAdditiveExpression(): Expression {
+    private parseVectorExpression(): AST.Expression {
+        if (this.currentToken().type !== TokenType.OpenBracket) {
+            return this.parseAdditiveExpression();
+        }
+
+        // Skip [ token
+        this.advance();
+
+        const values: AST.Expression[] = [];
+        while (this.currentToken().type !== TokenType.CloseBracket) {
+            const expr = this.parseExpression();
+            values.push(expr);
+
+            // Skip comma
+            if (this.currentToken().type === TokenType.Comma) {
+                this.advance();
+            }
+        }
+
+        this.advance();
+
+        return {
+            kind: "VectorExpression",
+            values
+        } as AST.Expression.Vector;
+    }
+
+    private parseAdditiveExpression(): AST.Expression {
         let left = this.parseMultiplicativeExpression();
 
         while (["+", "-"].includes(this.currentToken().value)) {
@@ -263,13 +277,13 @@ export class Parser {
                 left,
                 right,
                 operator,
-            } as BinaryExpression;
+            } as AST.Expression.Binary;
         }
 
         return left;
     }
 
-    private parseMultiplicativeExpression(): Expression {
+    private parseMultiplicativeExpression(): AST.Expression {
         let left = this.parsePrimaryExpression();
 
         while (
@@ -282,13 +296,13 @@ export class Parser {
                 left,
                 right,
                 operator,
-            } as BinaryExpression;
+            } as AST.Expression.Binary;
         }
 
         return left;
     }
 
-    private parsePrimaryExpression(): Expression {
+    private parsePrimaryExpression(): AST.Expression {
         const token = this.advance();
 
         switch (token.type) {
@@ -296,25 +310,25 @@ export class Parser {
                 return {
                     kind: "NumericLiteral",
                     value: parseInt(token.value),
-                } as NumericLiteral;
+                } as AST.Expression.Literal.Numeric;
 
             case TokenType.Float:
                 return {
                     kind: "NumericLiteral",
                     value: parseFloat(token.value),
-                } as NumericLiteral;
+                } as AST.Expression.Literal.Numeric;
 
             case TokenType.String:
                 return {
                     kind: "StringLiteral",
                     value: new String(token.value).valueOf(),
-                } as StringLiteral;
+                } as AST.Expression.Literal.String;
 
             case TokenType.Boolean:
                 return {
                     kind: "BooleanLiteral",
                     value: new Boolean(token.value).valueOf(),
-                } as BooleanLiteral;
+                } as AST.Expression.Literal.Boolean;
 
             case TokenType.OpenParen:
                 // Skip ( char
@@ -328,12 +342,7 @@ export class Parser {
                 return value;
 
             default:
-                this.errorLogger.add({
-                    message: "Unexpected token found during parsing",
-                    token: this.currentToken(),
-                    hint: "Ask the maintainers to support this token."
-                });
-                return { kind: "BinaryExpression" } as Expression;
+                throw new Error("Unexpected token type: " + token.type);
 
         }
     }
