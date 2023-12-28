@@ -26,7 +26,7 @@ export const writeToFile = (filename: string, data: any) => {
         fs.mkdirSync(outputDirectory, { recursive: true });
     }
 
-    fs.writeFileSync(outputPath, data, { encoding: 'utf-8', flag: 'w' });
+    fs.writeFileSync(outputPath, JSON.stringify(data), { encoding: 'utf-8', flag: 'w' });
 }
 
 export const prettyTokens = (tokens: Token[]) => {

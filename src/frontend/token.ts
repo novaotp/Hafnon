@@ -1,4 +1,3 @@
-import { Position } from "./lexer/Position";
 import { TokenType } from "./tokenType";
 
 export interface Token {
@@ -9,5 +8,5 @@ export interface Token {
     /** The type of the token. */
     type: TokenType;
     /** The position of the token in the source code. */
-    position: Position;
+    position: { column: number, line: number };
 }

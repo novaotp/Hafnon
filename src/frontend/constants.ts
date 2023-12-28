@@ -2,7 +2,13 @@ import { TokenType } from "./tokenType";
 
 export const KEYWORDS = new Map<string, TokenType>([
     ["mutable", TokenType.Mutable],
-    ["fn", TokenType.Function]
+    ["fn", TokenType.Function],
+    ["if", TokenType.If],
+    ["elif", TokenType.Elif],
+    ["else", TokenType.Else],
+    ["while", TokenType.While],
+    ["for", TokenType.For],
+    ["foreach", TokenType.ForEach]
 ]);
 
 export const BOOLEANS = ["true", "false"] as const;
