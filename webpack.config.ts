@@ -1,13 +1,12 @@
-import path from 'path';
+import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import webpack from 'webpack';
+import type { Configuration } from 'webpack';
 import nodeExternals from 'webpack-node-externals';
 import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const config: webpack.Configuration = {
+const config: Configuration = {
     entry: './src/main.ts',
     mode: 'development',
     devtool: 'source-map',
@@ -27,13 +26,13 @@ const config: webpack.Configuration = {
         outputModule: true,
     },
     output: {
-        path: path.resolve(__dirname, 'build'),
+        path: resolve(__dirname, 'build'),
         filename: 'index.js',
         module: true,
     },
     externals: [
         nodeExternals({
-            modulesDir: path.join(__dirname, 'node_modules'),
+            modulesDir: join(__dirname, 'node_modules'),
             importType: (moduleName: string) => `import ${moduleName}`,
         }),
     ],
