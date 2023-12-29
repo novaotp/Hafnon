@@ -1,4 +1,4 @@
-import { Position } from "./position";
+import { Position } from "../position";
 import { Token } from "../token";
 import { TokenType } from "../tokenType";
 import {
@@ -27,16 +27,29 @@ export class Lexer {
     private tokens: Token[];
 
     /**
-     * Creates an instance of Lexer to process a given source code and output an array of tokens.
+     * Processes a given source code and output an array of tokens.
      * @param sourceCode The raw source code to process
-     * @returns An instance of Lexer
+     * @returns An instance of {@link Lexer}
      */
     constructor(sourceCode: string) {
         this.sourceCode = sourceCode;
         this.chars = this.sourceCode.split("");
         this.cursor = 0;
-        this.currentPosition = new Position(1, 1);
+        this.currentPosition = { column: 1, line: 1 };
         this.tokens = [];
+    }
+
+    private nextColumn(): void {
+        this.currentPosition.column++;
+    }
+
+    private nextLine(): void {
+        this.currentPosition.line++;
+        this.currentPosition.column = 1;
+    }
+
+    private clonePosition(): Position {
+        return structuredClone(this.currentPosition);
     }
 
     /** Returns the current char. */
@@ -97,8 +110,8 @@ export class Lexer {
             switch (true) {
                 case this.isBracket(): {
                     const bracket = this.advance();
-                    const position = this.currentPosition.clone();
-                    this.currentPosition.nextColumn();
+                    const position = this.clonePosition();
+                    this.nextColumn();
                     const token = this.createToken(bracket, BRACKETS.get(bracket)!, 1, position);
                     this.tokens.push(token);
                     break;
@@ -106,8 +119,8 @@ export class Lexer {
 
                 case this.isBinaryOperator(): {
                     const operator = this.advance();
-                    const position = this.currentPosition.clone();
-                    this.currentPosition.nextColumn();
+                    const position = this.clonePosition();
+                    this.nextColumn();
                     const token = this.createToken(operator, TokenType.BinaryOperator, 1, position);
                     this.tokens.push(token);
                     break;
@@ -115,8 +128,8 @@ export class Lexer {
 
                 case this.isPunctuation(): {
                     const operator = this.advance();
-                    const position = this.currentPosition.clone();
-                    this.currentPosition.nextColumn();
+                    const position = this.clonePosition();
+                    this.nextColumn();
                     const token = this.createToken(operator, PUNCTUATIONS.get(operator)!, 1, position);
                     this.tokens.push(token);
                     break;
@@ -125,7 +138,7 @@ export class Lexer {
                 case this.isNumeric(): {
                     let nums = "";
                     let hasDot = false;
-                    const position = this.currentPosition.clone();
+                    const position = this.clonePosition();
 
                     while (this.cursor < this.chars.length) {
                         if (!this.isNumeric() && (this.currentChar() !== '.' || hasDot)) {
@@ -135,7 +148,7 @@ export class Lexer {
                         }
 
                         nums += this.advance();
-                        this.currentPosition.nextColumn();
+                        this.nextColumn();
                     }
 
                     const tokenType = hasDot ? TokenType.Float : TokenType.Integer;
@@ -146,12 +159,12 @@ export class Lexer {
 
                 case this.isComparisonOperator(): {
                     let operator = this.advance();
-                    const position = this.currentPosition.clone();
-                    this.currentPosition.nextColumn();
+                    const position = this.clonePosition();
+                    this.nextColumn();
 
                     if (COMPARISON_OPERATORS.has(`${operator}${this.currentChar()}`)) {
                         operator += this.advance();
-                        this.currentPosition.nextColumn();
+                        this.nextColumn();
                     }
 
                     const token = this.createToken(operator, COMPARISON_OPERATORS.get(operator)!, operator.length, position);
@@ -161,11 +174,11 @@ export class Lexer {
 
                 case this.isAlpha(): {
                     let alpha = "";
-                    const position = this.currentPosition.clone();
+                    const position = this.clonePosition();
 
                     while ((this.cursor < this.chars.length) && /[a-zA-Z0-9_]/.test(this.currentChar())) {
                         alpha += this.advance();
-                        this.currentPosition.nextColumn();
+                        this.nextColumn();
                     }
 
                     const tokenType =
@@ -183,22 +196,22 @@ export class Lexer {
                 }
 
                 case this.isString():
-                    const position = this.currentPosition.clone();
+                    const position = this.clonePosition();
 
                     // Skip the first "
                     this.advance();
-                    this.currentPosition.nextColumn();
+                    this.nextColumn();
 
                     let string = "";
 
                     while ((this.cursor < this.chars.length) && this.currentChar() !== '"') {
                         string += this.advance();
-                        this.currentPosition.nextColumn();
+                        this.nextColumn();
                     }
 
                     // Skip the last "
                     this.advance();
-                    this.currentPosition.nextColumn();
+                    this.nextColumn();
 
                     const token = this.createToken(string, TokenType.String, string.length, position);
                     this.tokens.push(token);
@@ -208,7 +221,7 @@ export class Lexer {
                     switch (this.currentChar()) {
                         case " ":
                             this.advance();
-                            this.currentPosition.nextColumn();
+                            this.nextColumn();
                             break;
 
                         // New line for Windows
@@ -216,19 +229,19 @@ export class Lexer {
                         case "\r":
                             this.advance();
                             this.advance();
-                            this.currentPosition.nextLine();
+                            this.nextLine();
                             break;
 
                         // New line for Unix-systems
                         case "\n":
                             this.advance();
-                            this.currentPosition.nextLine();
+                            this.nextLine();
                             break;
 
                         case "\t":
                             for (let i = 0; i < 4; i++) {
                                 this.advance();
-                                this.currentPosition.nextColumn();
+                                this.nextColumn();
                             }
                             break;
 
@@ -244,7 +257,7 @@ export class Lexer {
             }
         }
 
-        const eof = this.createToken("", TokenType.EOF, 0, this.currentPosition.clone());
+        const eof = this.createToken("", TokenType.EOF, 0, this.clonePosition());
         this.tokens.push(eof);
         return this.tokens;
     }
