@@ -1,20 +1,21 @@
 import { Token } from "../token";
 import { TokenType, tokenToString } from "../tokenType";
-import { ParserErrorLogger } from "./error";
-import { AST, defaultConditionalGroup } from "./ast";
+import { AST, defaultConditionalGroup } from "../ast";
 
 export class Parser {
     /** The array of tokens to parse. */
     private tokens: Token[];
     /** The current cursor index. */
     private cursor: number;
-    /** A custom error logger for the parser. */
-    private errorLogger: ParserErrorLogger;
 
-    constructor(tokens: Token[], sourceCode: string) {
+    /**
+     * Pprocesses an array of tokens and outputs an AST.
+     * @param tokens The array of tokens to parse.
+     * @returns An instance of {@link Parser}
+     */
+    constructor(tokens: Token[]) {
         this.tokens = tokens;
         this.cursor = 0;
-        this.errorLogger = new ParserErrorLogger(sourceCode);
     }
 
     /** Returns the token at the {@link cursor | cursor's} position and moves the cursor by one. */
@@ -57,11 +58,9 @@ export class Parser {
         const programBody: AST.Statement[] = [];
 
         while (this.cursor < this.tokens.length && this.currentToken().type !== TokenType.EOF) {
-            const node = this.parse();
-            programBody.push(node);
+            const statement = this.parse();
+            programBody.push(statement);
         }
-
-        this.errorLogger.display();
 
         return {
             kind: "Program",
@@ -128,13 +127,7 @@ export class Parser {
         const identifier = this.advance().value;
 
         let value: AST.Expression | undefined;
-        if (!isMutable && this.currentToken().value === ";") {
-            this.errorLogger.add({
-                message: "Cannot declare an immutable variable without a value.",
-                token: this.currentToken(),
-                hint: "Either add a value or declare the variable as mutable."
-            });
-        } else if (this.currentToken().value === ";") {
+        if (this.currentToken().type === TokenType.SemiColon) {
             value = undefined;
         } else {
             // Skip = char
