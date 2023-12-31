@@ -7,7 +7,7 @@ const config: JestConfig = {
     transformIgnorePatterns: [],
     moduleDirectories: ['node_modules', 'src'],
     moduleNameMapper: {
-        '^@frontend/(.*)$': '<rootDir>/src/frontend/$1',
+        '^@compilation/(.*)$': '<rootDir>/src/compilation/$1',
     }
 }
   

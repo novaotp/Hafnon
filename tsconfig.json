@@ -12,7 +12,7 @@
         "rootDir": ".",
         "baseUrl": ".",
         "paths": {
-            "@frontend/*": ["src/frontend/*"],
+            "@compilation/*": ["src/compilation/*"],
         }
     }
 }
