@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { Lexer } from "@frontend/lexer";
+import { Lexer } from "@compilation/lexer";
 import path from 'path';
 
 it("tests if-elif-else branches", () => {

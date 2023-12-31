@@ -1,6 +1,6 @@
-import { Lexer } from './frontend/lexer';
-import { Parser } from './frontend/parser';
-import { Semer } from './frontend/semer';
+import { Lexer } from './compilation/lexer';
+import { Parser } from './compilation/parser';
+import { Semer } from './compilation/semer';
 import { prettyTokens, readSourceFile, writeToFile } from './helper';
 
 const sourceCode = readSourceFile("src.haf");

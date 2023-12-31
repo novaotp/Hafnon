@@ -2,8 +2,8 @@
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { Token } from './frontend/token';
-import { tokenToString } from './frontend/tokenType';
+import { Token } from './compilation/token';
+import { tokenToString } from './compilation/tokenType';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
