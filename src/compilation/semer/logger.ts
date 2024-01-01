@@ -27,6 +27,11 @@ export class SemanticLogger {
         this.sourceCode = sourceCode;
     }
 
+    /** Returns the number of registered logs. */
+    public count(): number {
+        return this.logs.length;
+    }
+
     /**
      * Adds a new error to the stack.
      * @param error The error to add
@@ -44,7 +49,7 @@ export class SemanticLogger {
         const initalRepeat = 7;
 
         const log = `
-${type === "error" ? chalk.red("Error") : chalk.rgb(255, 165, 0)("Warning")} at line ${node.position.start.line}, column ${node.position.start.column}
+${type === "error" ? chalk.red("Compiler Error") : chalk.rgb(255, 165, 0)("Compiler Warning")} at line ${node.position.start.line}, column ${node.position.start.column}
 
     ${chalk.red("Why")}: ${message}
     ${chalk.blueBright("Where")}: ${this.sourceCode.split("\r\n").at(node.position.start.line - 1)}
