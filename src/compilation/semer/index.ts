@@ -22,8 +22,11 @@ export class Semer {
         this.logger = new SemanticLogger(sourceCode)
     }
 
-    /** The main function to analyze the AST. */
-    public analyze(): AST.Statement[] {
+    /**
+     * The main function to analyze the AST.
+     * @returns The number of registered logs.
+     */
+    public analyze(): number {
         for (const statement of this.ast) {
             switch (statement.kind) {
                 case "VariableDeclaration": {
@@ -62,6 +65,6 @@ export class Semer {
 
         this.logger.display();
 
-        return this.ast;
+        return this.logger.count();
     }
 }
