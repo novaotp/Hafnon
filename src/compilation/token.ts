@@ -1,3 +1,4 @@
+import { Position } from "./position";
 import { TokenType } from "./tokenType";
 
 export interface Token {
@@ -8,5 +9,5 @@ export interface Token {
     /** The type of the token. */
     type: TokenType;
     /** The position of the token in the source code. */
-    position: { column: number, line: number };
+    position: Position;
 }

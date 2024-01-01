@@ -1,4 +1,5 @@
-import { BinaryOperator } from "../constants";
+import { BinaryOperator } from "./constants";
+import { Position } from "./position";
 
 type NodeType =
     "Program" |
@@ -17,6 +18,8 @@ type NodeType =
 interface ASTNode {
     /** The kind of AST node. */
     kind: NodeType;
+    /** The position of the AST node in the source code. */
+    position: { start: Position, end: Position }
 }
 
 export const defaultConditionalGroup = (): AST.Expression.ConditionalGroup => {
@@ -109,7 +112,7 @@ export namespace AST {
             right: Expression;
         }
 
-        export interface Identifier {
+        export interface Identifier extends Expression {
             kind: "Identifier",
             /** The symbol of the variable. */
             symbol: string;

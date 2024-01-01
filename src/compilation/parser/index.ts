@@ -1,20 +1,31 @@
 import { Token } from "../token";
 import { TokenType, tokenToString } from "../tokenType";
-import { ParserErrorLogger } from "./error";
-import { AST, defaultConditionalGroup } from "./ast";
+import { AST, defaultConditionalGroup } from "../ast";
+import { Position } from "../position";
 
 export class Parser {
     /** The array of tokens to parse. */
     private tokens: Token[];
     /** The current cursor index. */
     private cursor: number;
-    /** A custom error logger for the parser. */
-    private errorLogger: ParserErrorLogger;
 
-    constructor(tokens: Token[], sourceCode: string) {
+    /**
+     * Pprocesses an array of tokens and outputs an AST.
+     * @param tokens The array of tokens to parse.
+     * @returns An instance of {@link Parser}
+     */
+    constructor(tokens: Token[]) {
         this.tokens = tokens;
         this.cursor = 0;
-        this.errorLogger = new ParserErrorLogger(sourceCode);
+    }
+
+    /** Returns a deep clone of the {@link currentToken | current token's} position. */
+    private getPosition(): Position {
+        if (this.lastToken().type === TokenType.EOF) {
+            return structuredClone(this.lastToken().position);
+        }
+
+        return structuredClone(this.currentToken().position);
     }
 
     /** Returns the token at the {@link cursor | cursor's} position and moves the cursor by one. */
@@ -22,6 +33,11 @@ export class Parser {
         const token = this.currentToken();
         this.cursor++;
         return token;
+    }
+
+    /** Returns the token at the {@link cursor | (cursor - 1)'s} position. */
+    private lastToken(): Token {
+        return this.tokens.at(this.cursor - 1)!;
     }
 
     /** Returns the token at the {@link cursor | cursor's} position. */
@@ -57,11 +73,9 @@ export class Parser {
         const programBody: AST.Statement[] = [];
 
         while (this.cursor < this.tokens.length && this.currentToken().type !== TokenType.EOF) {
-            const node = this.parse();
-            programBody.push(node);
+            const statement = this.parse();
+            programBody.push(statement);
         }
-
-        this.errorLogger.display();
 
         return {
             kind: "Program",
@@ -94,6 +108,7 @@ export class Parser {
      * vector<string> days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
      */
     private parseVariableDeclaration(): AST.Statement.VariableDeclaration {
+        const start = this.getPosition();
         const isMutable: boolean = this.currentToken().type === TokenType.Mutable;
 
         if (isMutable) {
@@ -128,13 +143,7 @@ export class Parser {
         const identifier = this.advance().value;
 
         let value: AST.Expression | undefined;
-        if (!isMutable && this.currentToken().value === ";") {
-            this.errorLogger.add({
-                message: "Cannot declare an immutable variable without a value.",
-                token: this.currentToken(),
-                hint: "Either add a value or declare the variable as mutable."
-            });
-        } else if (this.currentToken().value === ";") {
+        if (this.currentToken().type === TokenType.SemiColon) {
             value = undefined;
         } else {
             // Skip = char
@@ -143,15 +152,18 @@ export class Parser {
             value = this.parseExpression();
         }
 
+        const end = this.getPosition();
+
         // Skip ; char
         this.advance();
 
         return {
             kind: "VariableDeclaration",
-            isMutable: isMutable,
+            isMutable,
             type: type,
-            identifier: identifier,
-            value: value
+            identifier,
+            value,
+            position: { start, end }
         } as AST.Statement.VariableDeclaration;
     }
 
@@ -164,6 +176,7 @@ export class Parser {
      * }
      */
     private parseFunctionDeclaration(): AST.Expression.FunctionDeclaration {
+        const start = this.getPosition();
         // Skip the fn token
         this.advance();
 
@@ -188,6 +201,8 @@ export class Parser {
             body.push(statement);
         }
 
+        const end = this.getPosition();
+
         // Skip the } token
         this.advance();
 
@@ -196,7 +211,8 @@ export class Parser {
             returnType,
             identifier,
             arguments: args,
-            body
+            body,
+            position: { start, end }
         } as AST.Expression.FunctionDeclaration;
     }
 
@@ -220,20 +236,23 @@ export class Parser {
      * helloWorld = "goodbye world"; // <- Error thrown because helloWorld isn't mutable
      */
     private parseVariableAssignment(): AST.Statement.VariableAssignment {
+        const start = this.getPosition();
         const identifier = this.advance().value;
 
         // Skip the = token
         this.advance();
 
         const newValue = this.parseExpression();
-
+        
+        const end = this.getPosition();
         // Skip the ; token
         this.advance();
 
         return {
             kind: "VariableAssignment",
             identifier,
-            newValue
+            newValue,
+            position: { start, end }
         } as AST.Statement.VariableAssignment;
     }
 
@@ -254,6 +273,7 @@ export class Parser {
      * complexCalculation(complexCalculation(2, 6), result);
      */
     private parseFunctionCall(): AST.Expression.FunctionCall {
+        const start = this.getPosition();
         const identifier = this.advance().value;
 
         /**
@@ -265,13 +285,15 @@ export class Parser {
         this.advance();
         const parameters: AST.Expression[] = [];
 
+        const end = this.getPosition();
         // Skip the ; token
         this.advance();
 
         return {
             kind: "FunctionCall",
             identifier,
-            parameters
+            parameters,
+            position: { start, end }
         } as AST.Expression.FunctionCall;
     }
 
@@ -287,6 +309,7 @@ export class Parser {
         }
 
         let ifGroup: AST.Expression.ConditionalGroup = defaultConditionalGroup();
+        const start = this.getPosition();
 
         this.expect(TokenType.If);
         this.expect(TokenType.OpenParen);
@@ -344,11 +367,15 @@ export class Parser {
             this.expect(TokenType.CloseBrace);
         }
 
+        // Need to use custom position because of the if-elif-else branches
+        const end = structuredClone(this.tokens.at(this.cursor - 1)!.position);
+
         return {
             kind: "ConditionalExpression",
             if: ifGroup,
             elif: elifGroup,
-            else: elseGroup
+            else: elseGroup,
+            position: { start, end }
         } as AST.Expression.Conditional;
     }
 
@@ -357,6 +384,7 @@ export class Parser {
         if (this.currentToken().type !== TokenType.OpenBracket) {
             return this.parseComparativeExpression();
         }
+        const start = this.getPosition();
 
         // Skip [ token
         this.expect(TokenType.OpenBracket);
@@ -371,13 +399,15 @@ export class Parser {
                 this.advance();
             }
         }
-
+        
+        const end = this.getPosition();
         // Skip ] token
         this.expect(TokenType.CloseBracket);
 
         return {
             kind: "VectorExpression",
-            values
+            values,
+            position: { start, end }
         } as AST.Expression.Vector;
     }
 
@@ -436,40 +466,48 @@ export class Parser {
 
     private parsePrimaryExpression(): AST.Expression {
         const token = this.advance();
+        const start = structuredClone(token.position);
+        const end = structuredClone(start);
+        end.column += token.length;
 
         switch (token.type) {
             case TokenType.Integer:
                 return {
                     kind: "NumericLiteral",
                     value: parseInt(token.value),
+                    position: { start, end }
                 } as AST.Expression.Literal.Numeric;
 
             case TokenType.Float:
                 return {
                     kind: "NumericLiteral",
                     value: parseFloat(token.value),
+                    position: { start, end }
                 } as AST.Expression.Literal.Numeric;
 
             case TokenType.String:
                 return {
                     kind: "StringLiteral",
                     value: new String(token.value).valueOf(),
+                    position: { start, end }
                 } as AST.Expression.Literal.String;
 
             case TokenType.Identifier:
                 return {
                     kind: "Identifier",
-                    symbol: new String(token.value).valueOf()
+                    symbol: new String(token.value).valueOf(),
+                    position: { start, end }
                 } as AST.Expression.Identifier;
 
             case TokenType.Boolean:
                 return {
                     kind: "BooleanLiteral",
                     value: new Boolean(token.value).valueOf(),
+                    position: { start, end }
                 } as AST.Expression.Literal.Boolean;
 
             case TokenType.OpenParen:
-                this.expect(TokenType.OpenParen);
+                // ( token already skipped
 
                 const value = this.parseExpression();
 
