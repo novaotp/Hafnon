@@ -1,6 +1,6 @@
 # Hafnon
 
-Hafnon is a statically-typed, AOT-compiled language designed for optimal performance.
+Hafnon is a statically-typed, JIT-compiled language designed for optimal performance.
 
 ## Getting started
 
