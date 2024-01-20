@@ -6,6 +6,7 @@ type NodeType =
     "VariableDeclaration" |
     "VariableAssignment" |
     "FunctionDeclaration" |
+    "FunctionArgument" |
     "FunctionCall" |
     "ConditionalExpression" |
     "BinaryExpression" |
@@ -76,8 +77,8 @@ export namespace AST {
             returnType: Type;
             /** The name of the function. */
             identifier: string;
-            /** The function's arguments. */
-            arguments: Statement[];
+            /** The function's parameters. */
+            parameters: Statement[];
             /** The function's body. */
             body: Statement[];
         }
@@ -86,8 +87,8 @@ export namespace AST {
             kind: "FunctionCall";
             /** The name of the function to call. */
             identifier: string;
-            /** The function's parameters. */
-            parameters: Expression[];
+            /** The function's arguments. */
+            arguments: Expression[];
         }
 
         export interface ConditionalGroup {

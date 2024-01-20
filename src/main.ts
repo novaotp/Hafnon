@@ -12,7 +12,7 @@ function main() {
 
     writeToFile("tokens.json", prettyTokens(tokens));
 
-    const parser = new Parser(tokens);
+    const parser = new Parser(tokens, sourceCode);
     const ast = parser.produceAST();
 
     writeToFile("ast.json", ast);

@@ -1,12 +1,13 @@
 {
   "name": "hafnon",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "",
   "main": "node build/main.js",
   "type": "module",
   "scripts": {
     "build": "node --loader ts-node/esm node_modules/webpack-cli/bin/cli.js --config webpack.config.ts",
     "dev": "node build/index.js",
+    "start": "npm run build && npm run dev",
     "test": "jest"
   },
   "keywords": [],

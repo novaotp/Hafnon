@@ -2,21 +2,25 @@ import { Token } from "../token";
 import { TokenType, tokenToString } from "../tokenType";
 import { AST, defaultConditionalGroup } from "../ast";
 import { Position } from "../position";
+import chalk from "chalk";
 
 export class Parser {
     /** The array of tokens to parse. */
     private tokens: Token[];
     /** The current cursor index. */
     private cursor: number;
+    /** The source code of the program. */
+    private sourceCode: string;
 
     /**
      * Pprocesses an array of tokens and outputs an AST.
      * @param tokens The array of tokens to parse.
      * @returns An instance of {@link Parser}
      */
-    constructor(tokens: Token[]) {
+    constructor(tokens: Token[], sourceCode: string) {
         this.tokens = tokens;
         this.cursor = 0;
+        this.sourceCode = sourceCode;
     }
 
     /** Returns a deep clone of the {@link currentToken | current token's} position. */
@@ -59,6 +63,16 @@ export class Parser {
         const token = this.advance();
 
         if (token.type !== expectedToken) {
+            const log = `
+            ${chalk.red("Compiler Error")} at line ${token.position.line}, column ${token.position.column}
+            
+${chalk.red("Why")}: Expected token : <${tokenToString(expectedToken)}> | Got : <${tokenToString(token.type)}>
+${chalk.blueBright("Where")}: ${this.sourceCode.split("\r\n").at(token.position.line - 1)}
+${" ".repeat(7 + token.position.column - 1)}${chalk.red("^".repeat(token.length))}
+            `;
+
+            console.log(log);
+
             throw new Error(`Expected token : ${tokenToString(expectedToken)} | Got : ${tokenToString(token.type)}`);
         }
 
@@ -105,7 +119,7 @@ export class Parser {
      * @example
      * // Both yield the same result
      * vector<string> days = new Vector<string>("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
-     * vector<string> days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+     * vector days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
      */
     private parseVariableDeclaration(): AST.Statement.VariableDeclaration {
         const start = this.getPosition();
@@ -155,7 +169,9 @@ export class Parser {
         const end = this.getPosition();
 
         // Skip ; char
-        this.advance();
+        if (this.currentToken().type === TokenType.SemiColon) {
+            this.advance();
+        }
 
         return {
             kind: "VariableDeclaration",
@@ -183,14 +199,22 @@ export class Parser {
         const returnType = this.advance().value;
         const identifier = this.advance().value;
 
-        /**
-         * For now, skip the function args.
-         */
         // Skip the ( token
-        this.advance();
+        this.expect(TokenType.OpenParen);
+
+        const params: AST.Statement.VariableDeclaration[] = [];
+        while (this.currentToken().type !== TokenType.CloseParen) {
+            const statement = this.parseVariableDeclaration();
+            params.push(statement);
+
+            // Skip comma
+            if (this.currentToken().type === TokenType.Comma) {
+                this.advance();
+            }
+        }
+
         // Skip the ) token
         this.advance();
-        const args: AST.Expression[] = [];
 
         // Skip the { token
         this.advance();
@@ -210,7 +234,7 @@ export class Parser {
             kind: "FunctionDeclaration",
             returnType,
             identifier,
-            arguments: args,
+            parameters: params,
             body,
             position: { start, end }
         } as AST.Expression.FunctionDeclaration;
@@ -276,23 +300,33 @@ export class Parser {
         const start = this.getPosition();
         const identifier = this.advance().value;
 
-        /**
-         * For now, skip the function params.
-         */
         // Skip the ( token
-        this.advance();
+        this.expect(TokenType.OpenParen);
+
+        const args: AST.Expression[] = [];
+        while (this.currentToken().type !== TokenType.CloseParen) {
+            const expression = this.parseExpression();
+            args.push(expression);
+
+            // Skip comma
+            if (this.currentToken().type === TokenType.Comma) {
+                this.advance();
+            }
+        }
+
         // Skip the ) token
-        this.advance();
-        const parameters: AST.Expression[] = [];
+        this.expect(TokenType.CloseParen);
 
         const end = this.getPosition();
-        // Skip the ; token
-        this.advance();
+
+        if (this.currentToken().type === TokenType.SemiColon) {
+            this.advance();
+        }
 
         return {
             kind: "FunctionCall",
             identifier,
-            parameters,
+            arguments: args,
             position: { start, end }
         } as AST.Expression.FunctionCall;
     }
