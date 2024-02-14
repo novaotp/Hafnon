@@ -1,4 +1,0 @@
-mutable string helloWorld = "hello world";
-int myInt = 0;
-mutable bool isDay = false;
-vector<any> myVec = [];
